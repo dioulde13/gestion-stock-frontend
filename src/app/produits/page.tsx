@@ -78,6 +78,7 @@ export default function ProduitTable() {
       setLoading(false);
     }
   };
+  
 
   const fetchCategories = async () => {
     setLoading(true);
