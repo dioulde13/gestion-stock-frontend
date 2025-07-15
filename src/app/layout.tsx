@@ -43,7 +43,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
         <div className="pl-20 transition-all duration-300">
           <Header />
           <main className="p-4">{children}</main>
-          <Footer />
+          {/* <Footer /> */}
         </div>
       </body>
     </html>

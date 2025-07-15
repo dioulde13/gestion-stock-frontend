@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 
 type Produit = {
   id: number;
@@ -26,12 +26,12 @@ type Vente = {
 
 export default function VentesPage() {
   const [ventes, setVentes] = useState<Vente[]>([]);
+  const [lignesVente, setLignesVente] = useState<LigneVente[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
-  const [lignesVente, setLignesVente] = useState<LigneVente[]>([]);
   const [ligneTemp, setLigneTemp] = useState({
     produitId: '',
     quantite: '1',
@@ -61,20 +61,53 @@ export default function VentesPage() {
     }
   };
 
+  const [totalAchat, setTotalAchat] = useState<number | null>(null);
+  const [totalVente, setTotalVente] = useState<number | null>(null);
+
   const fetchVentes = async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('http://localhost:3000/api/vente/liste');
-      if (!res.ok) throw new Error('Erreur lors du chargement des ventes');
-      const data = await res.json();
+      const res = await fetch("http://localhost:3000/api/vente/liste");
+      if (!res.ok) throw new Error("Erreur lors du chargement des ventes");
+
+      const data: Vente[] = await res.json();
       setVentes(data);
+
+      // Calcul total achats
+      let totalAchats = 0;
+      data.forEach((vente) => {
+        vente.LigneVentes.forEach((ligne) => {
+          totalAchats += ligne.quantite * (ligne.Produit?.prix_achat ?? 0);
+        });
+      });
+
+      // Calcul total ventes
+      let totalVentes = 0;
+      data.forEach((vente) => {
+        vente.LigneVentes.forEach((ligne) => {
+          totalVentes += ligne.quantite * ligne.prix_vente;
+        });
+      });
+
+      setTotalAchat(totalAchats);
+      setTotalVente(totalVentes);
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setLoading(false);
     }
   };
+
+  // Calcul marge totale
+  const margeTotale = useMemo(() => {
+    if (totalAchat !== null && totalVente !== null) {
+      return totalVente - totalAchat;
+    }
+    return null;
+  }, [totalAchat, totalVente]);
+
+
 
   const creerVente = async () => {
     if (lignesVente.length === 0) {
@@ -234,7 +267,7 @@ export default function VentesPage() {
         </button>
       </section>
 
-       {loading ? (
+      {loading ? (
         <p>Chargement...</p>
       ) : error ? (
         <p className="text-red-600">Erreur : {error}</p>
@@ -272,7 +305,10 @@ export default function VentesPage() {
                       </div>
                     </td>
                     <td className="px-4 py-2 text-right font-semibold">
-                      {vente.total.toFixed(2)} GNF
+                        {/* {totalAchat?.toLocaleString()} GNF
+                      : {totalVente?.toLocaleString()} GNF
+                       : {margeTotale?.toLocaleString()} GNF */}
+                      {vente.total?.toLocaleString()} GNF
                     </td>
                   </tr>
 
@@ -284,7 +320,11 @@ export default function VentesPage() {
                             <tr>
                               <th className="px-3 py-2 border">Produit</th>
                               <th className="px-3 py-2 border">Quantité</th>
+                              <th className="px-3 py-2 border">Prix Achat</th>
                               <th className="px-3 py-2 border">Prix Vente</th>
+                              <th className="px-3 py-2 border">total achat</th>
+                              <th className="px-3 py-2 border">total Vente</th>
+                              <th className="px-3 py-2 border">Bénéfice</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -297,7 +337,19 @@ export default function VentesPage() {
                                   {ligne.quantite}
                                 </td>
                                 <td className="px-3 py-2 text-center border">
-                                  {ligne.prix_vente.toFixed(2)} GNF
+                                  {ligne.Produit?.prix_achat?.toLocaleString()} GNF
+                                </td>
+                                <td className="px-3 py-2 text-center border">
+                                  {ligne.prix_vente?.toLocaleString()} GNF
+                                </td>
+                                <td className="px-3 py-2 text-center border">
+                                  {ligne.quantite * (ligne.Produit?.prix_achat ?? 0)} GNF
+                                </td>
+                                <td className="px-3 py-2 text-center border">
+                                  {ligne.quantite * (ligne.prix_vente ?? 0)} GNF
+                                </td>
+                                <td className="px-3 py-2 text-center border">
+                                  {((ligne.quantite * (ligne.prix_vente ?? 0)) - (ligne.quantite * (ligne.Produit?.prix_achat ?? 0)))} GNF
                                 </td>
                               </tr>
                             ))}
