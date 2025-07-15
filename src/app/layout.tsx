@@ -41,7 +41,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
       <body>
         <Sidebar />
         <div className="pl-20 transition-all duration-300">
-          <Header />
+          {/* <Header /> */}
           <main className="p-4">{children}</main>
           {/* <Footer /> */}
         </div>

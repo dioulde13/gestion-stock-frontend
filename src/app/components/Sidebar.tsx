@@ -40,10 +40,11 @@ const Sidebar = () => {
   const [sidebarItems] = useState<SidebarItem[]>([
     { name: "Accueil", icon: "House", href: "/" },
     { name: "Ventes", icon: "DollarSign", href: "/ventes" },
-    { name: "Categories", icon: "ShoppingBag", href: "/categories" },
-    { name: "Produits", icon: "ShoppingBag", href: "/produits" },
-    { name: "Stock Minimum", icon: "ShoppingBag", href: "/stockMinimum" },
     { name: "Achat", icon: "ShoppingCart", href: "/achats" },
+    { name: "Mouvement Stock", icon: "ShoppingBag", href: "/" },
+    { name: "Produits", icon: "ShoppingBag", href: "/produits" },
+    { name: "Categories", icon: "ShoppingBag", href: "/categories" },
+    { name: "Stock Minimum", icon: "ShoppingBag", href: "/stockMinimum" },
     { name: "Fournisseurs", icon: "ShoppingCart", href: "/fournisseur" },
     { name: "Utilisateurs", icon: "Users", href: "/utilisateurs" },
   ]);
@@ -54,14 +55,14 @@ const Sidebar = () => {
 
   return (
     <div
-      className={`fixed top-0 left-0 h-full bg-[#1e1e1e] text-white z-50 transition-all duration-300 ${
+      className={`fixed top-0 left-0 text-end h-full bg-[#ededed] text-black z-50 transition-all duration-300 ${
         isSidebarOpen ? "w-64" : "w-20"
       }`}
     >
       <div className="p-4">
         <button
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className="p-2 rounded hover:bg-[#2f2f2f] transition-colors mb-6"
+          className="p-2 rounded hover:bg-blue-500 transition-colors mb-6"
           aria-label="Toggle sidebar"
         >
           <Menu />
@@ -75,7 +76,7 @@ const Sidebar = () => {
                 <Link
                   href={item.href}
                   onClick={handleLinkClick}
-                  className="flex items-center space-x-3 hover:bg-gray-800 p-2 rounded cursor-pointer"
+                  className="flex items-center space-x-3 hover:bg-blue-900 p-2 rounded cursor-pointer"
                 >
                   <Icon className="w-5 h-5" />
                   {isSidebarOpen && <span>{item.name}</span>}

@@ -200,6 +200,8 @@ export default function VentesPage() {
       prix_vente: prixVenteNum,
     };
 
+    console.log(nouvelleLigne);
+
     if (editingIndex !== null) {
       const updated = [...lignesVente];
       updated[editingIndex] = nouvelleLigne;
