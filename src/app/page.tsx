@@ -15,6 +15,7 @@ type LigneVente = {
   id?: number;
   produitId: number;
   quantite: number;
+  prix_achat: number;
   prix_vente: number;
   Produit?: Produit;
 };
@@ -84,18 +85,24 @@ export default function Home() {
         });
         setVentes(ventesData);
 
+        console.log(ventesData);
+
         // Calcul total achats et total ventes
         let totalAchats = 0;
         let totalVentes = 0;
         ventesData.forEach((vente: Vente) => {
           vente.LigneVentes.forEach((ligne) => {
-            totalAchats += ligne.quantite * (ligne.Produit?.prix_achat ?? 0);
+            console.log(ligne);
+            totalAchats += ligne.quantite * (ligne?.prix_achat ?? 0);
             totalVentes += ligne.quantite * ligne.prix_vente;
           });
         });
     
         setTotalAchat(totalAchats);
         setTotalVente(totalVentes);
+       
+        console.log(totalAchats);
+        console.log(totalVentes);
 
         setLoading(false);
       })
@@ -120,8 +127,8 @@ export default function Home() {
 
   return (
     <div className={styles.cardGrid}>
-      <StatCard label="Ventes du jour" value={stats.ventesDuJour} color="green" />
-      <StatCard label="Total Achats" value={stats.totalAchats} color="yellow" />
+      <StatCard label="Total Ventes du jour" value={stats.ventesDuJour} color="green" />
+      <StatCard label="Total Achats du jour" value={stats.totalAchats} color="yellow" />
       <StatCard label="Bénéfice du jour" value={stats.beneficeDuJour} color="purple" />
       <StatCard label="Produits en stock" value={stats.produitsEnStock} unit="articles" color="blue" />
       <StatCard label="Ruptures de stock" value={stats.rupturesStock} unit="articles" color="red" />

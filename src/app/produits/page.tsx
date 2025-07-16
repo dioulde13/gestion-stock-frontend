@@ -386,6 +386,9 @@ export default function ProduitTable() {
                 <th>Nom</th>
                 <th>Prix Achat</th>
                 <th>Prix Vente</th>
+                <th>Total Achat</th>
+                <th>Total Vente</th>
+                <th>Bénéfice</th>
                 <th>Stock Actuel</th>
                 <th>Stock Minimum</th>
                 <th>Catégorie</th>
@@ -400,6 +403,9 @@ export default function ProduitTable() {
                     <td>{produit.nom}</td>
                     <td>{formatPrix(produit.prix_achat)}</td>
                     <td>{formatPrix(produit.prix_vente)}</td>
+                    <td>{formatPrix(produit.stock_actuel * produit.prix_achat)}</td>
+                    <td>{formatPrix(produit.stock_actuel * produit.prix_vente)}</td>
+                    <td>{formatPrix((produit.stock_actuel * produit.prix_vente) - (produit.stock_actuel * produit.prix_achat))}</td>
                     <td>{produit.stock_actuel}</td>
                     <td>{produit.stock_minimum}</td>
                     <td>{produit.Categorie?.nom}</td>

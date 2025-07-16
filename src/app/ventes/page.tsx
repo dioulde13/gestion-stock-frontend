@@ -12,8 +12,9 @@ type Produit = {
 
 type LigneVente = {
   id?: number;
-  produitId: number;
+  produitId: number; 
   quantite: number;
+  prix_achat: number;
   prix_vente: number;
   Produit?: Produit;
 };
@@ -35,6 +36,7 @@ export default function VentesPage() {
   const [ligneTemp, setLigneTemp] = useState({
     produitId: '',
     quantite: '1',
+    prix_achat: '',
     prix_vente: '',
   });
   const [openIndex, setOpenIndex] = useState<number | null>(null);
@@ -73,12 +75,12 @@ export default function VentesPage() {
 
       const data: Vente[] = await res.json();
       setVentes(data);
-
+      // console.log(data);
       // Calcul total achats
       let totalAchats = 0;
       data.forEach((vente) => {
         vente.LigneVentes.forEach((ligne) => {
-          totalAchats += ligne.quantite * (ligne.Produit?.prix_achat ?? 0);
+          totalAchats += ligne.quantite * (ligne?.prix_achat ?? 0);
         });
       });
 
@@ -168,11 +170,12 @@ export default function VentesPage() {
       setLigneTemp({
         produitId: ligne.produitId.toString(),
         quantite: ligne.quantite.toString(),
+        prix_achat: ligne.prix_achat.toString(),
         prix_vente: ligne.prix_vente.toString(),
       });
       setEditingIndex(index);
     } else {
-      setLigneTemp({ produitId: '', quantite: '1', prix_vente: '' });
+      setLigneTemp({ produitId: '', quantite: '1', prix_achat: '', prix_vente: '' });
       setEditingIndex(null);
     }
     setModalOpen(true);
@@ -180,13 +183,14 @@ export default function VentesPage() {
 
   const fermerModal = () => {
     setModalOpen(false);
-    setLigneTemp({ produitId: '', quantite: '1', prix_vente: '' });
+    setLigneTemp({ produitId: '', quantite: '1', prix_achat: '', prix_vente: '' });
     setEditingIndex(null);
   };
 
   const confirmerLigne = () => {
     const produitIdNum = Number(ligneTemp.produitId);
     const quantiteNum = Number(ligneTemp.quantite);
+    const prixAchatNum = Number(ligneTemp.prix_achat);
     const prixVenteNum = Number(ligneTemp.prix_vente);
 
     if (!produitIdNum || !quantiteNum || !prixVenteNum) {
@@ -197,6 +201,7 @@ export default function VentesPage() {
     const nouvelleLigne = {
       produitId: produitIdNum,
       quantite: quantiteNum,
+      prix_achat: prixAchatNum,
       prix_vente: prixVenteNum,
     };
 
@@ -221,7 +226,7 @@ export default function VentesPage() {
   if (!mounted) return null;
 
   return (
-    <div style={{ maxWidth: 1000, margin: 'auto', padding: 20 }}>
+    <div style={{ margin: 'auto', padding: 20 }}>
       <h1 style={{ textAlign: 'center' }}>Gestion des ventes</h1>
 
       {/* section d'ajout de ligne */}
@@ -339,19 +344,19 @@ export default function VentesPage() {
                                   {ligne.quantite}
                                 </td>
                                 <td className="px-3 py-2 text-center border">
-                                  {ligne.Produit?.prix_achat?.toLocaleString()} GNF
+                                  {ligne?.prix_achat?.toLocaleString()} GNF
                                 </td>
                                 <td className="px-3 py-2 text-center border">
                                   {ligne.prix_vente?.toLocaleString()} GNF
                                 </td>
                                 <td className="px-3 py-2 text-center border">
-                                  {ligne.quantite * (ligne.Produit?.prix_achat ?? 0)} GNF
+                                  {ligne.quantite * (ligne?.prix_achat ?? 0)} GNF
                                 </td>
                                 <td className="px-3 py-2 text-center border">
                                   {ligne.quantite * (ligne.prix_vente ?? 0)} GNF
                                 </td>
                                 <td className="px-3 py-2 text-center border">
-                                  {((ligne.quantite * (ligne.prix_vente ?? 0)) - (ligne.quantite * (ligne.Produit?.prix_achat ?? 0)))} GNF
+                                  {((ligne.quantite * (ligne.prix_vente ?? 0)) - (ligne.quantite * (ligne?.prix_achat ?? 0)))} GNF
                                 </td>
                               </tr>
                             ))}
