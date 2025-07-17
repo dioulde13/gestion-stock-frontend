@@ -26,8 +26,9 @@ type Vente = {
   LigneVentes: LigneVente[];
 };
 
-type Statistiques = {
+type Statistiques = { 
   ventesDuJour: number;
+  achatsDuJour: number;
   totalAchats: number;
   beneficeDuJour: number;
   produitsEnStock: number;
@@ -39,8 +40,9 @@ type Statistiques = {
   beneficeToatal: number;
 };
 
-const defaultStats: Statistiques = {
+const defaultStats: Statistiques = { 
   ventesDuJour: 0,
+  achatsDuJour: 0,
   totalAchats: 0,
   beneficeDuJour: 0,
   produitsEnStock: 0,
@@ -85,7 +87,9 @@ export default function Home() {
         });
         setVentes(ventesData);
 
-        console.log(ventesData);
+        console.log(stats);
+        // console.log(ventesData);
+
 
         // Calcul total achats et total ventes
         let totalAchats = 0;
@@ -101,8 +105,8 @@ export default function Home() {
         setTotalAchat(totalAchats);
         setTotalVente(totalVentes);
        
-        console.log(totalAchats);
-        console.log(totalVentes);
+        // console.log(totalAchats);
+        // console.log(totalVentes);
 
         setLoading(false);
       })
@@ -124,18 +128,18 @@ export default function Home() {
   if (!hydrated) return null; // Pas de rendu côté serveur pour éviter l'erreur d'hydratation
   if (loading) return <p style={{ padding: '2rem' }}>Chargement...</p>;
   if (error) return <p style={{ padding: '2rem', color: 'red' }}>Erreur : {error}</p>;
-
+// console.log(stats);
   return (
     <div className={styles.cardGrid}>
       <StatCard label="Total Ventes du jour" value={stats.ventesDuJour} color="green" />
-      <StatCard label="Total Achats du jour" value={stats.totalAchats} color="yellow" />
+      <StatCard label="Valeur Achats du jour" value={stats.achatsDuJour} color="yellow" />
       <StatCard label="Bénéfice du jour" value={stats.beneficeDuJour} color="purple" />
       <StatCard label="Produits en stock" value={stats.produitsEnStock} unit="articles" color="blue" />
       <StatCard label="Ruptures de stock" value={stats.rupturesStock} unit="articles" color="red" />
       <StatCard label="Alertes Stock Min" value={stats.alertesStock} unit="alertes" color="orange" />
       <StatCard label="Valeur du stock" value={stats.valeurStock} color="gray" />
-      <StatCard label="Valeur total achat" value={totalAchat} color="gray" />
       <StatCard label="Valeur total de vente" value={totalVente} color="gray" />
+      <StatCard label="Valeur total achat" value={totalAchat} color="gray" />
       {margeTotale !== null && (
         <StatCard label="Valeur du bénéfice" value={margeTotale} color="teal" />
       )}

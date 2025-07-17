@@ -27,9 +27,9 @@
 
 import { ReactNode } from "react";
 import "./globals.css";
-import Header from "./components/Header";
+// import Header from "./components/Header";
 import Sidebar from "./components/Sidebar";
-import Footer from "./components/Footer";
+// import Footer from "./components/Footer";
 
 type RootLayoutProps = {
   children: ReactNode;

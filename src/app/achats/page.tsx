@@ -300,8 +300,16 @@ export default function VentesPage() {
 
   if (!mounted) return null;
 
+  const formatPrix = (prix: number) => {
+    return new Intl.NumberFormat('fr-FR', {
+      style: 'currency',
+      currency: 'GNF',
+      minimumFractionDigits: 0,
+    }).format(prix);
+  };
+
   return (
-    <div style={{ maxWidth: 1000, margin: 'auto', padding: 20 }}>
+    <div style={{ margin: 'auto', padding: 20 }}>
       <h1 style={{ textAlign: 'center' }}>Gestion des ventes</h1>
 
       {/* section d'ajout de ligne */}
@@ -335,8 +343,8 @@ export default function VentesPage() {
                 <td style={{ textAlign: 'center', border: '1px solid #ddd', padding: '8px' }}>{ligne.fournisseurId}</td>
                 <td style={{ textAlign: 'center', border: '1px solid #ddd', padding: '8px' }}>{ligne.produitId}</td>
                 <td style={{ textAlign: 'center', border: '1px solid #ddd', padding: '8px' }}>{ligne.quantite}</td>
-                <td style={{ textAlign: 'center', border: '1px solid #ddd', padding: '8px' }}>{ligne.prix_achat}</td>
-                <td style={{ textAlign: 'center', border: '1px solid #ddd', padding: '8px' }}>{ligne.prix_vente}</td>
+                <td style={{ textAlign: 'center', border: '1px solid #ddd', padding: '8px' }}>{formatPrix(ligne.prix_achat)}</td>
+                <td style={{ textAlign: 'center', border: '1px solid #ddd', padding: '8px' }}>{formatPrix(ligne.prix_vente)}</td>
                 <td style={{ textAlign: 'center', border: '1px solid #ddd', padding: '8px' }}>
                   <button onClick={() => ouvrirModal(i)} style={{ marginRight: 8, backgroundColor: '#2196f3', color: 'white', border: 'none', padding: '5px 10px', borderRadius: 4 }}>Modifier</button>
                   <button onClick={() => supprimerLigneTemp(i)} style={{ backgroundColor: '#f44336', color: 'white', border: 'none', padding: '5px 10px', borderRadius: 4 }}>Supprimer</button>
@@ -425,19 +433,19 @@ export default function VentesPage() {
                                   {ligne.quantite}
                                 </td>
                                 <td className="px-3 py-2 text-center border">
-                                  {ligne.Produit?.prix_achat?.toLocaleString()} GNF
+                                  {ligne?.prix_achat?.toLocaleString()} GNF
                                 </td>
                                 <td className="px-3 py-2 text-center border">
                                   {ligne.prix_vente?.toLocaleString()} GNF
                                 </td>
                                 <td className="px-3 py-2 text-center border">
-                                  {ligne.quantite * (ligne.Produit?.prix_achat ?? 0)} GNF
+                                  {formatPrix(ligne.quantite * (ligne?.prix_achat ?? 0))} 
                                 </td>
                                 <td className="px-3 py-2 text-center border">
-                                  {ligne.quantite * (ligne.prix_vente ?? 0)} GNF
+                                  {formatPrix(ligne.quantite * (ligne.prix_vente ?? 0))}
                                 </td>
                                 <td className="px-3 py-2 text-center border">
-                                  {((ligne.quantite * (ligne.prix_vente ?? 0)) - (ligne.quantite * (ligne.Produit?.prix_achat ?? 0)))} GNF
+                                  {formatPrix((ligne.quantite * (ligne.prix_vente ?? 0)) - (ligne.quantite * (ligne?.prix_achat ?? 0)))}
                                 </td>
                               </tr>
                             ))}

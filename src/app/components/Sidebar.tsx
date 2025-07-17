@@ -41,7 +41,7 @@ const Sidebar = () => {
     { name: "Accueil", icon: "House", href: "/" },
     { name: "Ventes", icon: "DollarSign", href: "/ventes" },
     { name: "Achat", icon: "ShoppingCart", href: "/achats" },
-    { name: "Mouvement Stock", icon: "ShoppingBag", href: "/" },
+    { name: "Mouvement Stock", icon: "ShoppingBag", href: "/mouvementStock" },
     { name: "Produits", icon: "ShoppingBag", href: "/produits" },
     { name: "Categories", icon: "ShoppingBag", href: "/categories" },
     { name: "Stock Minimum", icon: "ShoppingBag", href: "/stockMinimum" },

@@ -63,12 +63,16 @@ export default function ProduitTable() {
     fetchCategories();
   }, []);
 
+
   const fetchProduits = async () => {
     setLoading(true);
     setError(null);
     try {
       const res = await fetch('http://localhost:3000/api/produit/liste');
-      if (!res.ok) throw new Error('Erreur lors du chargement des produits');
+      if (!res.ok) {
+        const errorData = await res.json(); // On récupère l'objet JSON
+        throw new Error(errorData.message.message);
+      }
       const produits: Produit[] = await res.json();
       setData(produits);
       console.log(produits);
@@ -78,7 +82,7 @@ export default function ProduitTable() {
       setLoading(false);
     }
   };
-  
+
 
   const fetchCategories = async () => {
     setLoading(true);
@@ -200,7 +204,7 @@ export default function ProduitTable() {
   const handleDelete = async () => {
     if (!modalProduit) return;
     try {
-      const res = await fetch(`http://localhost:3000/api/produit/${modalProduit.id}`, { method: 'DELETE' });
+      const res = await fetch(`http://localhost:3000/api/produit/supprimer/${modalProduit.id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Erreur lors de la suppression');
       setData((prev) => prev.filter((p) => p.id !== modalProduit.id));
       closeModal();
@@ -332,6 +336,8 @@ export default function ProduitTable() {
     }
   };
 
+  console.log(currentData.length);
+
 
   return (
     <div className={styles.container}>
@@ -396,7 +402,7 @@ export default function ProduitTable() {
               </tr>
             </thead>
             <tbody>
-              {currentData.length ? (
+              {currentData.length > 0 ? (
                 currentData.map((produit) => (
                   <tr key={produit.id}>
                     <td>{produit.id}</td>
