@@ -37,7 +37,7 @@ export default function UtilisateurTable() {
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalType, setModalType] = useState<'edit' | 'delete' | 'add' | null>(null);
+  const [modalType, setModalType] = useState<'edit' | 'delete' | 'add' | 'addRole' | null>(null);
   const [modalUtilisateur, setModalUtilisateur] = useState<Utilisateur | null>(null);
 
   // Form state
@@ -45,6 +45,9 @@ export default function UtilisateurTable() {
   const [formEmail, setFormEmail] = useState('');
   const [formMotPasse, setFormMotPasse] = useState('');
   const [formRoleId, setFormRoleId] = useState<number | null>(null);
+
+  const [formNomRole, setFormNomRole] = useState('');
+
 
 
 
@@ -163,7 +166,7 @@ export default function UtilisateurTable() {
     setCurrentPage(page);
   };
 
-  const openModal = (type: 'edit' | 'delete' | 'add', utilisateur?: Utilisateur) => {
+  const openModal = (type: 'edit' | 'delete' | 'add' | 'addRole', utilisateur?: Utilisateur) => {
     setModalType(type);
     setModalUtilisateur(utilisateur || null);
     setModalOpen(true);
@@ -178,6 +181,8 @@ export default function UtilisateurTable() {
       setFormEmail('');
       setFormMotPasse('');
       setFormRoleId(null);
+    } else if (type === 'addRole') {
+      setFormNomRole('');
     }
   };
 
@@ -279,6 +284,35 @@ export default function UtilisateurTable() {
   };
 
 
+  // POST (ajouter role)
+  const handleAddRole = async () => {
+    if (!formNomRole) {
+      alert('Merci de remplir les champs obligatoires (nom)');
+      return;
+    }
+    try {
+      setLoadingSubmit(true);
+      const newRole = {
+        nom: formNomRole
+      };
+      console.log(newRole);
+      const res = await fetch('http://localhost:3000/api/role/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newRole),
+      });
+      if (!res.ok) throw new Error("Erreur lors de l'ajout");
+      closeModal();
+      fetchRole();
+      showNotification('Role ajouté avec succès.');
+    } catch (e) {
+      alert((e as Error).message);
+    } finally {
+      setLoadingSubmit(false);
+    }
+  };
+
+
   return (
     <div className={styles.container}>
       <h1 className={styles.title}>La Liste Des Utilisateur</h1>
@@ -309,7 +343,13 @@ export default function UtilisateurTable() {
             className={styles.searchInput}
           />
         </div>
-
+        <button
+          onClick={() => openModal('addRole')}
+          className={`${styles.button} ${styles.addButton}`}
+          style={{ marginLeft: 'auto' }}
+        >
+          Ajouter role
+        </button>
         <button
           onClick={() => openModal('add')}
           className={`${styles.button} ${styles.addButton}`}
@@ -510,7 +550,7 @@ export default function UtilisateurTable() {
                     required
                     disabled={loadingSubmit}
                   />
-                  
+
                   <input
                     type="password"
                     placeholder="Mot de Passe"
@@ -532,6 +572,42 @@ export default function UtilisateurTable() {
                       </option>
                     ))}
                   </select>
+                  <div className={styles.modalActions}>
+                    <button type="submit" className={styles.modalButton} disabled={loadingSubmit}>
+                      {loadingSubmit ? 'Chargement...' : 'Ajouter'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={closeModal}
+                      className={styles.modalCloseButton}
+                      disabled={loadingSubmit}
+                    >
+                      Annuler
+                    </button>
+                  </div>
+                </form>
+              </>
+            )}
+
+
+            {modalType === 'addRole' && (
+              <>
+                <h2>Ajouter un role</h2>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleAddRole();
+                  }}
+                >
+                  <input
+                    type="text"
+                    placeholder="Nom"
+                    value={formNomRole}
+                    onChange={(e) => setFormNomRole(e.target.value)}
+                    className={styles.modalInput}
+                    required
+                    disabled={loadingSubmit}
+                  />
                   <div className={styles.modalActions}>
                     <button type="submit" className={styles.modalButton} disabled={loadingSubmit}>
                       {loadingSubmit ? 'Chargement...' : 'Ajouter'}

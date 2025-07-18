@@ -99,7 +99,10 @@ export default function VentesPage() {
   const fetchProduits = async () => {
     try {
       const res = await fetch('http://localhost:3000/api/produit/liste');
-      if (!res.ok) throw new Error('Erreur lors du chargement des produits');
+       if (!res.ok) {
+        const errorData = await res.json(); // On récupère l'objet JSON
+        throw new Error(errorData.message.message);
+      }
       const produit: Produit[] = await res.json();
       setDataProduit(produit);
     } catch (e) {
