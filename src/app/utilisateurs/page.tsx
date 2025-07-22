@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import styles from './utilisateur.module.css';
+import ProtectedRoute from '../components/ProtectedRoute';
+
 
 declare module 'jspdf' {
   interface jsPDF {
@@ -314,319 +316,321 @@ export default function UtilisateurTable() {
 
 
   return (
-    <div className={styles.container}>
-      <h1 className={styles.title}>La Liste Des Utilisateur</h1>
+    <ProtectedRoute>
+      <div className={styles.container}>
+        <h1 className={styles.title}>La Liste Des Utilisateur</h1>
 
-      {notification && (
-        <div className={styles.notification}>
-          {notification}
+        {notification && (
+          <div className={styles.notification}>
+            {notification}
+          </div>
+        )}
+
+        <div className={styles.actions}>
+          <button onClick={exportCSV} className={styles.button}>
+            Exporter CSV
+          </button>
+          <button onClick={exportPDF} className={styles.button}>
+            Exporter PDF
+          </button>
+
+          <div>
+            <input
+              type="text"
+              placeholder="Rechercher..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setCurrentPage(1);
+              }}
+              className={styles.searchInput}
+            />
+          </div>
+          <button
+            onClick={() => openModal('addRole')}
+            className={`${styles.button} ${styles.addButton}`}
+            style={{ marginLeft: 'auto' }}
+          >
+            Ajouter role
+          </button>
+          <button
+            onClick={() => openModal('add')}
+            className={`${styles.button} ${styles.addButton}`}
+            style={{ marginLeft: 'auto' }}
+          >
+            Ajouter
+          </button>
         </div>
-      )}
 
-      <div className={styles.actions}>
-        <button onClick={exportCSV} className={styles.button}>
-          Exporter CSV
-        </button>
-        <button onClick={exportPDF} className={styles.button}>
-          Exporter PDF
-        </button>
-
-        <div>
-          <input
-            type="text"
-            placeholder="Rechercher..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setCurrentPage(1);
-            }}
-            className={styles.searchInput}
-          />
-        </div>
-        <button
-          onClick={() => openModal('addRole')}
-          className={`${styles.button} ${styles.addButton}`}
-          style={{ marginLeft: 'auto' }}
-        >
-          Ajouter role
-        </button>
-        <button
-          onClick={() => openModal('add')}
-          className={`${styles.button} ${styles.addButton}`}
-          style={{ marginLeft: 'auto' }}
-        >
-          Ajouter
-        </button>
-      </div>
-
-      {loading ? (
-        <p>Chargement...</p>
-      ) : error ? (
-        <p style={{ color: 'red' }}>Erreur : {error}</p>
-      ) : (
-        <>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Nom</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentData.length > 0 ? (
-                currentData.map((fournisseur) => (
-                  <tr key={fournisseur.id}>
-                    <td>{fournisseur.id}</td>
-                    <td>{fournisseur.nom}</td>
-                    <td>{fournisseur.email}</td>
-                    <td>{fournisseur.Role?.nom}</td>
-                    <td>
-                      <button
-                        title="Modifier"
-                        className={styles.actionButton}
-                        onClick={() => openModal('edit', fournisseur)}
-                      >
-                        ✏️
-                      </button>
-                      <button
-                        title="Supprimer"
-                        className={styles.actionButton}
-                        onClick={() => openModal('delete', fournisseur)}
-                      >
-                        🗑️
-                      </button>
+        {loading ? (
+          <p>Chargement...</p>
+        ) : error ? (
+          <p style={{ color: 'red' }}>Erreur : {error}</p>
+        ) : (
+          <>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Nom</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentData.length > 0 ? (
+                  currentData.map((fournisseur) => (
+                    <tr key={fournisseur.id}>
+                      <td>{fournisseur.id}</td>
+                      <td>{fournisseur.nom}</td>
+                      <td>{fournisseur.email}</td>
+                      <td>{fournisseur.Role?.nom}</td>
+                      <td>
+                        <button
+                          title="Modifier"
+                          className={styles.actionButton}
+                          onClick={() => openModal('edit', fournisseur)}
+                        >
+                          ✏️
+                        </button>
+                        <button
+                          title="Supprimer"
+                          className={styles.actionButton}
+                          onClick={() => openModal('delete', fournisseur)}
+                        >
+                          🗑️
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={10} style={{ textAlign: 'center' }}>
+                      Aucun résultat
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={10} style={{ textAlign: 'center' }}>
-                    Aucun résultat
-                  </td>
-                </tr>
+                )}
+              </tbody>
+            </table>
+
+            <div className={styles.pagination}>
+              <button
+                onClick={() => goToPage(currentPage - 1)}
+                disabled={currentPage === 1}
+                className={styles.pageButton}
+              >
+                Précédent
+              </button>
+
+              <span className={styles.pageInfo}>
+                Page {currentPage} / {totalPages}
+              </span>
+
+              <button
+                onClick={() => goToPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className={styles.pageButton}
+              >
+                Suivant
+              </button>
+            </div>
+          </>
+        )}
+
+        {modalOpen && (
+          <div className={styles.modalOverlay} onClick={closeModal}>
+            <div
+              className={styles.modal}
+              onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+            >
+              {modalType === 'edit' && modalUtilisateur && (
+                <>
+                  <h2>Modifier utilisateur</h2>
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleEdit();
+                    }}
+                  >
+                    <input
+                      type="text"
+                      placeholder="Nom"
+                      value={formNom}
+                      onChange={(e) => setFormNom(e.target.value)}
+                      className={styles.modalInput}
+                      required
+                      disabled={loadingSubmit}
+                    />
+
+                    <input
+                      type="email"
+                      placeholder="Email"
+                      value={formEmail}
+                      onChange={(e) => setFormEmail(e.target.value)}
+                      className={styles.modalInput}
+                      required
+                      disabled={loadingSubmit}
+                    />
+                    <input
+                      type="number"
+                      placeholder="ID Role"
+                      value={formRoleId ?? ''}
+                      onChange={(e) => setFormRoleId(Number(e.target.value))}
+                      className={styles.modalInput}
+                      min={1}
+                      disabled={loadingSubmit}
+                    />
+                    <div className={styles.modalActions}>
+                      <button type="submit" className={styles.modalButton} disabled={loadingSubmit}>
+                        {loadingSubmit ? 'Chargement...' : 'Confirmer'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={closeModal}
+                        className={styles.modalCloseButton}
+                        disabled={loadingSubmit}
+                      >
+                        Annuler
+                      </button>
+                    </div>
+                  </form>
+                </>
               )}
-            </tbody>
-          </table>
 
-          <div className={styles.pagination}>
-            <button
-              onClick={() => goToPage(currentPage - 1)}
-              disabled={currentPage === 1}
-              className={styles.pageButton}
-            >
-              Précédent
-            </button>
+              {modalType === 'delete' && modalUtilisateur && (
+                <>
+                  <h2>Confirmer</h2>
+                  <p>
+                    Veux-tu vraiment supprimer <strong>{modalUtilisateur.nom}</strong> ?
+                  </p>
+                  <div className={styles.modalActions}>
+                    <button
+                      onClick={handleDelete}
+                      className={styles.modalButtonDelete}
+                      disabled={loadingSubmit}
+                    >
+                      Supprimer
+                    </button>
+                    <button
+                      onClick={closeModal}
+                      className={styles.modalCloseButton}
+                      disabled={loadingSubmit}
+                    >
+                      Annuler
+                    </button>
+                  </div>
+                </>
+              )}
 
-            <span className={styles.pageInfo}>
-              Page {currentPage} / {totalPages}
-            </span>
+              {modalType === 'add' && (
+                <>
+                  <h2>Ajouter un utilisateur</h2>
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleAdd();
+                    }}
+                  >
+                    <input
+                      type="text"
+                      placeholder="Nom"
+                      value={formNom}
+                      onChange={(e) => setFormNom(e.target.value)}
+                      className={styles.modalInput}
+                      required
+                      disabled={loadingSubmit}
+                    />
 
-            <button
-              onClick={() => goToPage(currentPage + 1)}
-              disabled={currentPage === totalPages}
-              className={styles.pageButton}
-            >
-              Suivant
-            </button>
+                    <input
+                      type="email"
+                      placeholder="Email"
+                      value={formEmail}
+                      onChange={(e) => setFormEmail(e.target.value)}
+                      className={styles.modalInput}
+                      required
+                      disabled={loadingSubmit}
+                    />
+
+                    <input
+                      type="password"
+                      placeholder="Mot de Passe"
+                      value={formMotPasse}
+                      onChange={(e) => setFormMotPasse(e.target.value)}
+                      className={styles.modalInput}
+                      required
+                      disabled={loadingSubmit}
+                    />
+                    <select
+                      value={formRoleId ?? ''}
+                      onChange={(e) => setFormRoleId(Number(e.target.value))}
+                      className={styles.modalInput}
+                    >
+                      <option value="">-- Role --</option>
+                      {dataRole.map((role) => (
+                        <option key={role.id} value={role.id}>
+                          {role.nom}
+                        </option>
+                      ))}
+                    </select>
+                    <div className={styles.modalActions}>
+                      <button type="submit" className={styles.modalButton} disabled={loadingSubmit}>
+                        {loadingSubmit ? 'Chargement...' : 'Ajouter'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={closeModal}
+                        className={styles.modalCloseButton}
+                        disabled={loadingSubmit}
+                      >
+                        Annuler
+                      </button>
+                    </div>
+                  </form>
+                </>
+              )}
+
+
+              {modalType === 'addRole' && (
+                <>
+                  <h2>Ajouter un role</h2>
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleAddRole();
+                    }}
+                  >
+                    <input
+                      type="text"
+                      placeholder="Nom"
+                      value={formNomRole}
+                      onChange={(e) => setFormNomRole(e.target.value)}
+                      className={styles.modalInput}
+                      required
+                      disabled={loadingSubmit}
+                    />
+                    <div className={styles.modalActions}>
+                      <button type="submit" className={styles.modalButton} disabled={loadingSubmit}>
+                        {loadingSubmit ? 'Chargement...' : 'Ajouter'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={closeModal}
+                        className={styles.modalCloseButton}
+                        disabled={loadingSubmit}
+                      >
+                        Annuler
+                      </button>
+                    </div>
+                  </form>
+                </>
+              )}
+            </div>
           </div>
-        </>
-      )}
-
-      {modalOpen && (
-        <div className={styles.modalOverlay} onClick={closeModal}>
-          <div
-            className={styles.modal}
-            onClick={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-          >
-            {modalType === 'edit' && modalUtilisateur && (
-              <>
-                <h2>Modifier utilisateur</h2>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    handleEdit();
-                  }}
-                >
-                  <input
-                    type="text"
-                    placeholder="Nom"
-                    value={formNom}
-                    onChange={(e) => setFormNom(e.target.value)}
-                    className={styles.modalInput}
-                    required
-                    disabled={loadingSubmit}
-                  />
-
-                  <input
-                    type="email"
-                    placeholder="Email"
-                    value={formEmail}
-                    onChange={(e) => setFormEmail(e.target.value)}
-                    className={styles.modalInput}
-                    required
-                    disabled={loadingSubmit}
-                  />
-                  <input
-                    type="number"
-                    placeholder="ID Role"
-                    value={formRoleId ?? ''}
-                    onChange={(e) => setFormRoleId(Number(e.target.value))}
-                    className={styles.modalInput}
-                    min={1}
-                    disabled={loadingSubmit}
-                  />
-                  <div className={styles.modalActions}>
-                    <button type="submit" className={styles.modalButton} disabled={loadingSubmit}>
-                      {loadingSubmit ? 'Chargement...' : 'Confirmer'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={closeModal}
-                      className={styles.modalCloseButton}
-                      disabled={loadingSubmit}
-                    >
-                      Annuler
-                    </button>
-                  </div>
-                </form>
-              </>
-            )}
-
-            {modalType === 'delete' && modalUtilisateur && (
-              <>
-                <h2>Confirmer</h2>
-                <p>
-                  Veux-tu vraiment supprimer <strong>{modalUtilisateur.nom}</strong> ?
-                </p>
-                <div className={styles.modalActions}>
-                  <button
-                    onClick={handleDelete}
-                    className={styles.modalButtonDelete}
-                    disabled={loadingSubmit}
-                  >
-                    Supprimer
-                  </button>
-                  <button
-                    onClick={closeModal}
-                    className={styles.modalCloseButton}
-                    disabled={loadingSubmit}
-                  >
-                    Annuler
-                  </button>
-                </div>
-              </>
-            )}
-
-            {modalType === 'add' && (
-              <>
-                <h2>Ajouter un utilisateur</h2>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    handleAdd();
-                  }}
-                >
-                  <input
-                    type="text"
-                    placeholder="Nom"
-                    value={formNom}
-                    onChange={(e) => setFormNom(e.target.value)}
-                    className={styles.modalInput}
-                    required
-                    disabled={loadingSubmit}
-                  />
-
-                  <input
-                    type="email"
-                    placeholder="Email"
-                    value={formEmail}
-                    onChange={(e) => setFormEmail(e.target.value)}
-                    className={styles.modalInput}
-                    required
-                    disabled={loadingSubmit}
-                  />
-
-                  <input
-                    type="password"
-                    placeholder="Mot de Passe"
-                    value={formMotPasse}
-                    onChange={(e) => setFormMotPasse(e.target.value)}
-                    className={styles.modalInput}
-                    required
-                    disabled={loadingSubmit}
-                  />
-                  <select
-                    value={formRoleId ?? ''}
-                    onChange={(e) => setFormRoleId(Number(e.target.value))}
-                    className={styles.modalInput}
-                  >
-                    <option value="">-- Role --</option>
-                    {dataRole.map((role) => (
-                      <option key={role.id} value={role.id}>
-                        {role.nom}
-                      </option>
-                    ))}
-                  </select>
-                  <div className={styles.modalActions}>
-                    <button type="submit" className={styles.modalButton} disabled={loadingSubmit}>
-                      {loadingSubmit ? 'Chargement...' : 'Ajouter'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={closeModal}
-                      className={styles.modalCloseButton}
-                      disabled={loadingSubmit}
-                    >
-                      Annuler
-                    </button>
-                  </div>
-                </form>
-              </>
-            )}
-
-
-            {modalType === 'addRole' && (
-              <>
-                <h2>Ajouter un role</h2>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    handleAddRole();
-                  }}
-                >
-                  <input
-                    type="text"
-                    placeholder="Nom"
-                    value={formNomRole}
-                    onChange={(e) => setFormNomRole(e.target.value)}
-                    className={styles.modalInput}
-                    required
-                    disabled={loadingSubmit}
-                  />
-                  <div className={styles.modalActions}>
-                    <button type="submit" className={styles.modalButton} disabled={loadingSubmit}>
-                      {loadingSubmit ? 'Chargement...' : 'Ajouter'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={closeModal}
-                      className={styles.modalCloseButton}
-                      disabled={loadingSubmit}
-                    >
-                      Annuler
-                    </button>
-                  </div>
-                </form>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </ProtectedRoute>
   );
 }

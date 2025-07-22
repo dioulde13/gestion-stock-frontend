@@ -4,13 +4,16 @@ import { useState, useEffect } from 'react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import styles from './mouvementStock.module.css';
-import UtilisateurTable from '../utilisateurs/page';
+// import UtilisateurTable from '../utilisateurs/page';
+import ProtectedRoute from '../components/ProtectedRoute';
+
 
 declare module 'jspdf' {
   interface jsPDF {
     autoTable: (options: any) => jsPDF;
   }
 }
+
 
 type Utilisateur = {
   id: number;
@@ -55,12 +58,14 @@ export default function MouvementStockTable() {
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalType, setModalType] = useState<'edit' | 'delete' | 'add' | null>(null);
+  const [modalType, setModalType] = useState<'edit' | 'delete' | 'add' | 'addTypeMvt' | null>(null);
   const [modalMouvementStock, setModalMouvementStock] = useState<MouvementStock | null>(null);
 
   // Form state
+
+  const [formTypeMvt, setFormTypeMvt] = useState('');
   const [formMotif, setFormMotif] = useState('');
-  const [formQuantite, setFormQuantite] = useState<number | null>(null);
+  const [formQuantite, setFormQuantite] = useState<number | ''>('');
   const [formTypeId, setFormTypeId] = useState<number | null>(null);
   const [formProduitId, setFormProduitId] = useState<number | null>(null);
   const [formUtilisateurId, setFormUtilisateurId] = useState<number | null>(null);
@@ -79,7 +84,7 @@ export default function MouvementStockTable() {
   }, []);
 
 
-   const fetchUtilisateur = async () => {
+  const fetchUtilisateur = async () => {
     setLoading(true);
     setError(null);
     try {
@@ -215,7 +220,7 @@ export default function MouvementStockTable() {
     setCurrentPage(page);
   };
 
-  const openModal = (type: 'edit' | 'delete' | 'add', mouvementStock?: MouvementStock) => {
+  const openModal = (type: 'edit' | 'delete' | 'add' | 'addTypeMvt', mouvementStock?: MouvementStock) => {
     setModalType(type);
     setModalMouvementStock(mouvementStock || null);
     setModalOpen(true);
@@ -232,6 +237,8 @@ export default function MouvementStockTable() {
       setFormProduitId(null);
       setFormTypeId(null);
       setFormUtilisateurId(null);
+    } else if (type === 'addTypeMvt') {
+      setFormTypeMvt('');
     }
   };
 
@@ -295,6 +302,36 @@ export default function MouvementStockTable() {
     }
   };
 
+
+  // POST (ajouter type mouvement stock)
+  const handleAddTypeMvt = async () => {
+    if (!formTypeMvt) {
+      alert('Merci de remplir les champs obligatoires (Type)');
+      return;
+    }
+    try {
+      setLoadingSubmit(true);
+      const newTypeMvt = {
+        type: formTypeMvt,
+      };
+      console.log(newTypeMvt);
+      const res = await fetch('http://localhost:3000/api/typeMvtStock/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newTypeMvt),
+      });
+      if (!res.ok) throw new Error("Erreur lors de l'ajout");
+
+      closeModal();
+      fetchTypeMvt();
+      showNotification('Type mouvement Stock  ajouté avec succès.');
+    } catch (e) {
+      alert((e as Error).message);
+    } finally {
+      setLoadingSubmit(false);
+    }
+  };
+
   // POST (ajouter produit)
   const handleAdd = async () => {
     if (!formMotif) {
@@ -336,194 +373,230 @@ export default function MouvementStockTable() {
 
 
   return (
-    <div className={styles.container}>
-      <h1 className={styles.title}>La Liste des mouvements stocks</h1>
+    <ProtectedRoute>
+      <div className={styles.container}>
+        <h1 className={styles.title}>La Liste des mouvements stocks</h1>
 
-      {notification && (
-        <div className={styles.notification}>
-          {notification}
+        {notification && (
+          <div className={styles.notification}>
+            {notification}
+          </div>
+        )}
+
+        <div className={styles.actions}>
+          <button onClick={exportCSV} className={styles.button}>
+            Exporter CSV
+          </button>
+          <button onClick={exportPDF} className={styles.button}>
+            Exporter PDF
+          </button>
+
+          <div>
+            <input
+              type="text"
+              placeholder="Rechercher..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setCurrentPage(1);
+              }}
+              className={styles.searchInput}
+            />
+          </div>
+
+          <button
+            onClick={() => openModal('addTypeMvt')}
+            className={`${styles.button} ${styles.addButton}`}
+            style={{ marginLeft: 'auto' }}
+          >
+            Ajouter type
+          </button>
+
+          <button
+            onClick={() => openModal('add')}
+            className={`${styles.button} ${styles.addButton}`}
+            style={{ marginLeft: 'auto' }}
+          >
+            Ajouter
+          </button>
         </div>
-      )}
 
-      <div className={styles.actions}>
-        <button onClick={exportCSV} className={styles.button}>
-          Exporter CSV
-        </button>
-        <button onClick={exportPDF} className={styles.button}>
-          Exporter PDF
-        </button>
-
-        <div>
-          <input
-            type="text"
-            placeholder="Rechercher..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setCurrentPage(1);
-            }}
-            className={styles.searchInput}
-          />
-        </div>
-
-        <button
-          onClick={() => openModal('add')}
-          className={`${styles.button} ${styles.addButton}`}
-          style={{ marginLeft: 'auto' }}
-        >
-          Ajouter
-        </button>
-      </div>
-
-      {loading ? (
-        <p>Chargement...</p>
-      ) : error ? (
-        <p style={{ color: 'red' }}>Erreur : {error}</p>
-      ) : (
-        <>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Motif</th>
-                <th>Quantite</th>
-                <th>Produit</th>
-                <th>Type</th>
-                <th>Utilisateur</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentData.length > 0 ? (
-                currentData.map((mouvementStock) => (
-                  <tr key={mouvementStock.id}>
-                    <td>{mouvementStock.id}</td>
-                    <td>{mouvementStock.motif}</td>
-                    <td>{mouvementStock.quantite}</td>
-                    <td>{mouvementStock.Produit?.nom}</td>
-                    <td>{mouvementStock.TypeMvt?.type}</td>
-                    <td>{mouvementStock.Utilisateur?.nom}</td>
-                    <td>
-                      <button
-                        title="Modifier"
-                        className={styles.actionButton}
-                        onClick={() => openModal('edit', mouvementStock)}
-                      >
-                        ✏️
-                      </button>
-                      <button
-                        title="Supprimer"
-                        className={styles.actionButton}
-                        onClick={() => openModal('delete', mouvementStock)}
-                      >
-                        🗑️
-                      </button>
+        {loading ? (
+          <p>Chargement...</p>
+        ) : error ? (
+          <p style={{ color: 'red' }}>Erreur : {error}</p>
+        ) : (
+          <>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Motif</th>
+                  <th>Quantite</th>
+                  <th>Produit</th>
+                  <th>Type</th>
+                  <th>Utilisateur</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentData.length > 0 ? (
+                  currentData.map((mouvementStock) => (
+                    <tr key={mouvementStock.id}>
+                      <td>{mouvementStock.id}</td>
+                      <td>{mouvementStock.motif}</td>
+                      <td>{mouvementStock.quantite}</td>
+                      <td>{mouvementStock.Produit?.nom}</td>
+                      <td>{mouvementStock.TypeMvt?.type}</td>
+                      <td>{mouvementStock.Utilisateur?.nom}</td>
+                      <td>
+                        <button
+                          title="Modifier"
+                          className={styles.actionButton}
+                          onClick={() => openModal('edit', mouvementStock)}
+                        >
+                          ✏️
+                        </button>
+                        <button
+                          title="Supprimer"
+                          className={styles.actionButton}
+                          onClick={() => openModal('delete', mouvementStock)}
+                        >
+                          🗑️
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={10} style={{ textAlign: 'center' }}>
+                      Aucun résultat
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={10} style={{ textAlign: 'center' }}>
-                    Aucun résultat
-                  </td>
-                </tr>
+                )}
+              </tbody>
+            </table>
+
+            <div className={styles.pagination}>
+              <button
+                onClick={() => goToPage(currentPage - 1)}
+                disabled={currentPage === 1}
+                className={styles.pageButton}
+              >
+                Précédent
+              </button>
+
+              <span className={styles.pageInfo}>
+                Page {currentPage} / {totalPages}
+              </span>
+
+              <button
+                onClick={() => goToPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className={styles.pageButton}
+              >
+                Suivant
+              </button>
+            </div>
+          </>
+        )}
+
+        {modalOpen && (
+          <div className={styles.modalOverlay} onClick={closeModal}>
+            <div
+              className={styles.modal}
+              onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+            >
+              {modalType === 'edit' && modalMouvementStock && (
+                <>
+                  <h2>Modifier utilisateur</h2>
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleEdit();
+                    }}
+                  >
+                    <input
+                      type="text"
+                      placeholder="Motif"
+                      value={formMotif}
+                      onChange={(e) => setFormMotif(e.target.value)}
+                      className={styles.modalInput}
+                      required
+                      disabled={loadingSubmit}
+                    />
+
+                    <input
+                      type="number"
+                      placeholder="Quantite"
+                      value={Number(formQuantite)}
+                      onChange={(e) => setFormQuantite(Number(e.target.value))}
+                      className={styles.modalInput}
+                      min={0}
+                      required
+                      disabled={loadingSubmit}
+                    />
+                    <input
+                      type="number"
+                      placeholder="ID Type"
+                      value={formTypeId ?? ''}
+                      onChange={(e) => setFormTypeId(Number(e.target.value))}
+                      className={styles.modalInput}
+                      min={1}
+                      disabled={loadingSubmit}
+                    />
+                    <input
+                      type="number"
+                      placeholder="ID Produit"
+                      value={formProduitId ?? ''}
+                      onChange={(e) => setFormProduitId(Number(e.target.value))}
+                      className={styles.modalInput}
+                      min={1}
+                      disabled={loadingSubmit}
+                    />
+                    <input
+                      type="number"
+                      placeholder="ID Utilisateur"
+                      value={formUtilisateurId ?? ''}
+                      onChange={(e) => setFormUtilisateurId(Number(e.target.value))}
+                      className={styles.modalInput}
+                      min={1}
+                      disabled={loadingSubmit}
+                    />
+                    <div className={styles.modalActions}>
+                      <button type="submit" className={styles.modalButton} disabled={loadingSubmit}>
+                        {loadingSubmit ? 'Chargement...' : 'Confirmer'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={closeModal}
+                        className={styles.modalCloseButton}
+                        disabled={loadingSubmit}
+                      >
+                        Annuler
+                      </button>
+                    </div>
+                  </form>
+                </>
               )}
-            </tbody>
-          </table>
 
-          <div className={styles.pagination}>
-            <button
-              onClick={() => goToPage(currentPage - 1)}
-              disabled={currentPage === 1}
-              className={styles.pageButton}
-            >
-              Précédent
-            </button>
-
-            <span className={styles.pageInfo}>
-              Page {currentPage} / {totalPages}
-            </span>
-
-            <button
-              onClick={() => goToPage(currentPage + 1)}
-              disabled={currentPage === totalPages}
-              className={styles.pageButton}
-            >
-              Suivant
-            </button>
-          </div>
-        </>
-      )}
-
-      {modalOpen && (
-        <div className={styles.modalOverlay} onClick={closeModal}>
-          <div
-            className={styles.modal}
-            onClick={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-          >
-            {modalType === 'edit' && modalMouvementStock && (
-              <>
-                <h2>Modifier utilisateur</h2>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    handleEdit();
-                  }}
-                >
-                  <input
-                    type="text"
-                    placeholder="Motif"
-                    value={formMotif}
-                    onChange={(e) => setFormMotif(e.target.value)}
-                    className={styles.modalInput}
-                    required
-                    disabled={loadingSubmit}
-                  />
-
-                  <input
-                    type="number"
-                    placeholder="Quantite"
-                    value={Number(formQuantite)}
-                    onChange={(e) => setFormQuantite(Number(e.target.value))}
-                    className={styles.modalInput}
-                    required
-                    disabled={loadingSubmit}
-                  />
-                  <input
-                    type="number"
-                    placeholder="ID Type"
-                    value={formTypeId ?? ''}
-                    onChange={(e) => setFormTypeId(Number(e.target.value))}
-                    className={styles.modalInput}
-                    min={1}
-                    disabled={loadingSubmit}
-                  />
-                   <input
-                    type="number"
-                    placeholder="ID Produit"
-                    value={formProduitId ?? ''}
-                    onChange={(e) => setFormProduitId(Number(e.target.value))}
-                    className={styles.modalInput}
-                    min={1}
-                    disabled={loadingSubmit}
-                  />
-                   <input
-                    type="number"
-                    placeholder="ID Utilisateur"
-                    value={formUtilisateurId ?? ''}
-                    onChange={(e) => setFormUtilisateurId(Number(e.target.value))}
-                    className={styles.modalInput}
-                    min={1}
-                    disabled={loadingSubmit}
-                  />
+              {modalType === 'delete' && modalMouvementStock && (
+                <>
+                  <h2>Confirmer</h2>
+                  <p>
+                    Veux-tu vraiment supprimer <strong>{modalMouvementStock.motif}</strong> ?
+                  </p>
                   <div className={styles.modalActions}>
-                    <button type="submit" className={styles.modalButton} disabled={loadingSubmit}>
-                      {loadingSubmit ? 'Chargement...' : 'Confirmer'}
+                    <button
+                      onClick={handleDelete}
+                      className={styles.modalButtonDelete}
+                      disabled={loadingSubmit}
+                    >
+                      Supprimer
                     </button>
                     <button
-                      type="button"
                       onClick={closeModal}
                       className={styles.modalCloseButton}
                       disabled={loadingSubmit}
@@ -531,120 +604,148 @@ export default function MouvementStockTable() {
                       Annuler
                     </button>
                   </div>
-                </form>
-              </>
-            )}
+                </>
+              )}
 
-            {modalType === 'delete' && modalMouvementStock && (
-              <>
-                <h2>Confirmer</h2>
-                <p>
-                  Veux-tu vraiment supprimer <strong>{modalMouvementStock.motif}</strong> ?
-                </p>
-                <div className={styles.modalActions}>
-                  <button
-                    onClick={handleDelete}
-                    className={styles.modalButtonDelete}
-                    disabled={loadingSubmit}
+              {modalType === 'add' && (
+                <>
+                  <h2>Ajouter un mouvements de stock</h2>
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleAdd();
+                    }}
                   >
-                    Supprimer
-                  </button>
-                  <button
-                    onClick={closeModal}
-                    className={styles.modalCloseButton}
-                    disabled={loadingSubmit}
-                  >
-                    Annuler
-                  </button>
-                </div>
-              </>
-            )}
-
-            {modalType === 'add' && (
-              <>
-                <h2>Ajouter un mouvements de stock</h2>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    handleAdd();
-                  }}
-                >
-                  <input
-                    type="text"
-                    placeholder="Motif"
-                    value={formMotif}
-                    onChange={(e) => setFormMotif(e.target.value)}
-                    className={styles.modalInput}
-                    required
-                    disabled={loadingSubmit}
-                  />
-
-                  <input
-                    type="number"
-                    placeholder="Quantite"
-                    value={Number(formQuantite)}
-                    onChange={(e) => setFormQuantite(Number(e.target.value))}
-                    className={styles.modalInput}
-                    required
-                    disabled={loadingSubmit}
-                  />
-                  
-                  <select
-                    value={formTypeId ?? ''}
-                    onChange={(e) => setFormTypeId(Number(e.target.value))}
-                    className={styles.modalInput}
-                  >
-                    <option value="">-- Type --</option>
-                    {dataTypeMvt.map((type) => (
-                      <option key={type.id} value={type.id}>
-                        {type.type}
-                      </option>
-                    ))}
-                  </select>
-
-                   <select
-                    value={formProduitId ?? ''}
-                    onChange={(e) => setFormProduitId(Number(e.target.value))}
-                    className={styles.modalInput}
-                  >
-                    <option value="">-- Produit --</option>
-                    {dataProduit.map((prod) => (
-                    <option key={prod.id} value={prod.id}>{prod.nom} - {prod.prix_achat} - {prod.prix_vente} - {prod.stock_actuel}</option>
-                    ))}
-                  </select>
-
-                   <select
-                    value={formUtilisateurId ?? ''}
-                    onChange={(e) => setFormUtilisateurId(Number(e.target.value))}
-                    className={styles.modalInput}
-                  >
-                    <option value="">-- Utilisateur --</option>
-                    {dataUtilisateur.map((utilisateur) => (
-                      <option key={utilisateur.id} value={utilisateur.id}>
-                        {utilisateur.nom}
-                      </option>
-                    ))}
-                  </select>
-
-                  <div className={styles.modalActions}>
-                    <button type="submit" className={styles.modalButton} disabled={loadingSubmit}>
-                      {loadingSubmit ? 'Chargement...' : 'Ajouter'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={closeModal}
-                      className={styles.modalCloseButton}
+                    <input
+                      type="text"
+                      placeholder="Motif"
+                      value={formMotif}
+                      onChange={(e) => setFormMotif(e.target.value)}
+                      className={styles.modalInput}
+                      required
                       disabled={loadingSubmit}
+                    />
+
+                    <input
+                      type="number"
+                      placeholder="Quantite"
+                      value={Number(formQuantite)}
+                      onChange={(e) => setFormQuantite(Number(e.target.value))}
+                      className={styles.modalInput}
+                      required
+                      disabled={loadingSubmit}
+                    />
+
+                    <select
+                      value={formTypeId ?? ''}
+                      onChange={(e) => setFormTypeId(Number(e.target.value))}
+                      className={styles.modalInput}
                     >
-                      Annuler
-                    </button>
-                  </div>
-                </form>
-              </>
-            )}
+                      <option value="">-- Type --</option>
+                      {dataTypeMvt.map((type) => (
+                        <option key={type.id} value={type.id}>
+                          {type.type}
+                        </option>
+                      ))}
+                    </select>
+
+                    <select
+                      value={formProduitId ?? ''}
+                      onChange={(e) => setFormProduitId(Number(e.target.value))}
+                      className={styles.modalInput}
+                    >
+                      <option value="">-- Produit --</option>
+                      {dataProduit.map((prod) => (
+                        <option key={prod.id} value={prod.id}>{prod.nom} - {prod.prix_achat} - {prod.prix_vente} - {prod.stock_actuel}</option>
+                      ))}
+                    </select>
+
+                    <select
+                      value={formUtilisateurId ?? ''}
+                      onChange={(e) => setFormUtilisateurId(Number(e.target.value))}
+                      className={styles.modalInput}
+                    >
+                      <option value="">-- Utilisateur --</option>
+                      {dataUtilisateur.map((utilisateur) => (
+                        <option key={utilisateur.id} value={utilisateur.id}>
+                          {utilisateur.nom}
+                        </option>
+                      ))}
+                    </select>
+
+                    <div className={styles.modalActions}>
+                      <button type="submit" className={styles.modalButton} disabled={loadingSubmit}>
+                        {loadingSubmit ? 'Chargement...' : 'Ajouter'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={closeModal}
+                        className={styles.modalCloseButton}
+                        disabled={loadingSubmit}
+                      >
+                        Annuler
+                      </button>
+                    </div>
+                  </form>
+                </>
+              )}
+
+
+              {modalType === 'addTypeMvt' && (
+                <>
+                  <h2>Ajouter un type de mouvements de stock</h2>
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleAddTypeMvt();
+                    }}
+                  >
+
+                    <select
+                      value={formTypeMvt ?? ''}
+                      onChange={(e) => setFormTypeMvt(e.target.value)}
+                      className={styles.modalInput}
+                    >
+                      <option value="">-- Type --</option>
+                      <option value={"ENTRE"}>
+                        ENTRE
+                      </option>
+                      <option value={"SORTIE"}>
+                        SORTIE
+                      </option>
+                    </select>
+
+                    {/* <input
+                    type="text"
+                    placeholder="Type"
+                    value={formTypeMvt}
+                    onChange={(e) => setFormTypeMvt(e.target.value)}
+                    className={styles.modalInput}
+                    required
+                    disabled={loadingSubmit}
+                  /> */}
+
+                    <div className={styles.modalActions}>
+                      <button type="submit" className={styles.modalButton} disabled={loadingSubmit}>
+                        {loadingSubmit ? 'Chargement...' : 'Ajouter'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={closeModal}
+                        className={styles.modalCloseButton}
+                        disabled={loadingSubmit}
+                      >
+                        Annuler
+                      </button>
+                    </div>
+                  </form>
+                </>
+              )}
+
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </ProtectedRoute>
   );
 }

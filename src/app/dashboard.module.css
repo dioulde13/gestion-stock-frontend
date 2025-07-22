@@ -1,3 +1,48 @@
+.dateFilterContainer {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  justify-content: center;
+  /* align-items: center; */
+  flex-wrap: wrap;
+  background-color: #f9fafb;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.dateInputGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.dateInputGroup label {
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: #374151;
+  margin-bottom: 4px;
+}
+
+.dateInputGroup input[type="date"] {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  background-color: #ffffff;
+  color: #111827;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.dateInputGroup input[type="date"]:hover {
+  border-color: #9ca3af;
+}
+
+.dateInputGroup input[type="date"]:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.3);
+}
+
+
 .cardGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));

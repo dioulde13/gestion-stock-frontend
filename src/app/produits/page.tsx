@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import styles from './produit.module.css';
+import ProtectedRoute from '../components/ProtectedRoute';
+
 
 declare module 'jspdf' {
   interface jsPDF {
@@ -245,6 +247,8 @@ export default function ProduitTable() {
       setData((prev) =>
         prev.map((p) => (p.id === modalProduit.id ? dataApi.produit ?? dataApi : p))
       );
+      fetchCategories();
+      fetchProduits();
       closeModal();
       showNotification('Produit modifié avec succès.');
     } catch (e) {
@@ -340,214 +344,241 @@ export default function ProduitTable() {
 
 
   return (
-    <div className={styles.container}>
-      <h1 className={styles.title}>La Liste Des Produits</h1>
+    <ProtectedRoute>
+      <div className={styles.container}>
+        <h1 className={styles.title}>La Liste Des Produits</h1>
 
-      {notification && (
-        <div className={styles.notification}>
-          {notification}
+        {notification && (
+          <div className={styles.notification}>
+            {notification}
+          </div>
+        )}
+
+        <div className={styles.actions}>
+          <button onClick={exportCSV} className={styles.button}>
+            Exporter CSV
+          </button>
+          <button onClick={exportPDF} className={styles.button}>
+            Exporter PDF
+          </button>
+
+          <div>
+            <input
+              type="text"
+              placeholder="Rechercher..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setCurrentPage(1);
+              }}
+              className={styles.searchInput}
+            />
+          </div>
+
+          <button
+            onClick={() => openModal('add')}
+            className={`${styles.button} ${styles.addButton}`}
+            style={{ marginLeft: 'auto' }}
+          >
+            Ajouter
+          </button>
         </div>
-      )}
 
-      <div className={styles.actions}>
-        <button onClick={exportCSV} className={styles.button}>
-          Exporter CSV
-        </button>
-        <button onClick={exportPDF} className={styles.button}>
-          Exporter PDF
-        </button>
-
-        <div>
-          <input
-            type="text"
-            placeholder="Rechercher..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setCurrentPage(1);
-            }}
-            className={styles.searchInput}
-          />
-        </div>
-
-        <button
-          onClick={() => openModal('add')}
-          className={`${styles.button} ${styles.addButton}`}
-          style={{ marginLeft: 'auto' }}
-        >
-          Ajouter
-        </button>
-      </div>
-
-      {loading ? (
-        <p>Chargement...</p>
-      ) : error ? (
-        <p style={{ color: 'red' }}>Erreur : {error}</p>
-      ) : (
-        <>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Nom</th>
-                <th>Prix Achat</th>
-                <th>Prix Vente</th>
-                <th>Total Achat</th>
-                <th>Total Vente</th>
-                <th>Bénéfice</th>
-                <th>Stock Actuel</th>
-                <th>Stock Minimum</th>
-                <th>Catégorie</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentData.length > 0 ? (
-                currentData.map((produit) => (
-                  <tr key={produit.id}>
-                    <td>{produit.id}</td>
-                    <td>{produit.nom}</td>
-                    <td>{formatPrix(produit.prix_achat)}</td>
-                    <td>{formatPrix(produit.prix_vente)}</td>
-                    <td>{formatPrix(produit.stock_actuel * produit.prix_achat)}</td>
-                    <td>{formatPrix(produit.stock_actuel * produit.prix_vente)}</td>
-                    <td>{formatPrix((produit.stock_actuel * produit.prix_vente) - (produit.stock_actuel * produit.prix_achat))}</td>
-                    <td>{produit.stock_actuel}</td>
-                    <td>{produit.stock_minimum}</td>
-                    <td>{produit.Categorie?.nom}</td>
-                    <td>
-                      <button
-                        title="Modifier"
-                        className={styles.actionButton}
-                        onClick={() => openModal('edit', produit)}
-                      >
-                        ✏️
-                      </button>
-                      <button
-                        title="Supprimer"
-                        className={styles.actionButton}
-                        onClick={() => openModal('delete', produit)}
-                      >
-                        🗑️
-                      </button>
+        {loading ? (
+          <p>Chargement...</p>
+        ) : error ? (
+          <p style={{ color: 'red' }}>Erreur : {error}</p>
+        ) : (
+          <>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Nom</th>
+                  <th>Prix Achat</th>
+                  <th>Prix Vente</th>
+                  <th>Stock Actuel</th>
+                  <th>Stock Minimum</th>
+                  <th>Total Achat</th>
+                  <th>Total Vente</th>
+                  <th>Bénéfice</th>
+                  <th>Catégorie</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentData.length > 0 ? (
+                  currentData.map((produit) => (
+                    <tr key={produit.id}>
+                      <td>{produit.id}</td>
+                      <td>{produit.nom}</td>
+                      <td>{formatPrix(produit.prix_achat)}</td>
+                      <td>{formatPrix(produit.prix_vente)}</td>
+                      <td>{produit.stock_actuel}</td>
+                      <td>{produit.stock_minimum}</td>
+                      <td>{formatPrix(produit.stock_actuel * produit.prix_achat)}</td>
+                      <td>{formatPrix(produit.stock_actuel * produit.prix_vente)}</td>
+                      <td>{formatPrix((produit.stock_actuel * produit.prix_vente) - (produit.stock_actuel * produit.prix_achat))}</td>
+                      <td>{produit.Categorie?.nom}</td>
+                      <td>
+                        <button
+                          title="Modifier"
+                          className={styles.actionButton}
+                          onClick={() => openModal('edit', produit)}
+                        >
+                          ✏️
+                        </button>
+                        <button
+                          title="Supprimer"
+                          className={styles.actionButton}
+                          onClick={() => openModal('delete', produit)}
+                        >
+                          🗑️
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={10} style={{ textAlign: 'center' }}>
+                      Aucun résultat
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={10} style={{ textAlign: 'center' }}>
-                    Aucun résultat
-                  </td>
-                </tr>
+                )}
+              </tbody>
+            </table>
+
+            <div className={styles.pagination}>
+              <button
+                onClick={() => goToPage(currentPage - 1)}
+                disabled={currentPage === 1}
+                className={styles.pageButton}
+              >
+                Précédent
+              </button>
+
+              <span className={styles.pageInfo}>
+                Page {currentPage} / {totalPages}
+              </span>
+
+              <button
+                onClick={() => goToPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className={styles.pageButton}
+              >
+                Suivant
+              </button>
+            </div>
+          </>
+        )}
+
+        {modalOpen && (
+          <div className={styles.modalOverlay} onClick={closeModal}>
+            <div
+              className={styles.modal}
+              onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+            >
+              {modalType === 'edit' && modalProduit && (
+                <>
+                  <h2>Modifier produit</h2>
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleEdit();
+                    }}
+                  >
+                    <input
+                      type="text"
+                      placeholder="Nom"
+                      value={formNom}
+                      onChange={(e) => setFormNom(e.target.value)}
+                      className={styles.modalInput}
+                      required
+                      disabled={loadingSubmit}
+                    />
+                    <input
+                      type="number"
+                      placeholder="Prix Achat"
+                      value={formPrixAchat}
+                      onChange={(e) => setFormPrixAchat(e.target.value === '' ? '' : Number(e.target.value))}
+                      className={styles.modalInput}
+                      required
+                      min={0}
+                      step="0.01"
+                      disabled={loadingSubmit}
+                    />
+                    <input
+                      type="number"
+                      placeholder="Prix Vente"
+                      value={formPrixVente}
+                      onChange={(e) => setFormPrixVente(Number(e.target.value))}
+                      className={styles.modalInput}
+                      required
+                      min={0}
+                      step="0.01"
+                      disabled={loadingSubmit}
+                    />
+                    <input
+                      type="number"
+                      placeholder="Stock Actuel"
+                      value={formStockActuel}
+                      onChange={(e) => setFormStockActuel(Number(e.target.value))}
+                      className={styles.modalInput}
+                      min={0}
+                      disabled={loadingSubmit}
+                    />
+                    <input
+                      type="number"
+                      placeholder="Stock Minimum"
+                      value={formStockMinimum}
+                      onChange={(e) => setFormStockMinimum(Number(e.target.value))}
+                      className={styles.modalInput}
+                      min={0}
+                      disabled={loadingSubmit}
+                    />
+                    <input
+                      type="number"
+                      placeholder="ID Catégorie"
+                      value={formCategorieId ?? ''}
+                      onChange={(e) => setFormCategorieId(Number(e.target.value))}
+                      className={styles.modalInput}
+                      min={1}
+                      disabled={loadingSubmit}
+                    />
+                    <div className={styles.modalActions}>
+                      <button type="submit" className={styles.modalButton} disabled={loadingSubmit}>
+                        {loadingSubmit ? 'Chargement...' : 'Confirmer'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={closeModal}
+                        className={styles.modalCloseButton}
+                        disabled={loadingSubmit}
+                      >
+                        Annuler
+                      </button>
+                    </div>
+                  </form>
+                </>
               )}
-            </tbody>
-          </table>
 
-          <div className={styles.pagination}>
-            <button
-              onClick={() => goToPage(currentPage - 1)}
-              disabled={currentPage === 1}
-              className={styles.pageButton}
-            >
-              Précédent
-            </button>
-
-            <span className={styles.pageInfo}>
-              Page {currentPage} / {totalPages}
-            </span>
-
-            <button
-              onClick={() => goToPage(currentPage + 1)}
-              disabled={currentPage === totalPages}
-              className={styles.pageButton}
-            >
-              Suivant
-            </button>
-          </div>
-        </>
-      )}
-
-      {modalOpen && (
-        <div className={styles.modalOverlay} onClick={closeModal}>
-          <div
-            className={styles.modal}
-            onClick={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-          >
-            {modalType === 'edit' && modalProduit && (
-              <>
-                <h2>Modifier produit</h2>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    handleEdit();
-                  }}
-                >
-                  <input
-                    type="text"
-                    placeholder="Nom"
-                    value={formNom}
-                    onChange={(e) => setFormNom(e.target.value)}
-                    className={styles.modalInput}
-                    required
-                    disabled={loadingSubmit}
-                  />
-                  <input
-                    type="number"
-                    placeholder="Prix Achat"
-                    value={formPrixAchat}
-                    onChange={(e) => setFormPrixAchat(e.target.value === '' ? '' : Number(e.target.value))}
-                    className={styles.modalInput}
-                    required
-                    min={0}
-                    step="0.01"
-                    disabled={loadingSubmit}
-                  />
-                  <input
-                    type="number"
-                    placeholder="Prix Vente"
-                    value={formPrixVente}
-                    onChange={(e) => setFormPrixVente(Number(e.target.value))}
-                    className={styles.modalInput}
-                    required
-                    min={0}
-                    step="0.01"
-                    disabled={loadingSubmit}
-                  />
-                  <input
-                    type="number"
-                    placeholder="Stock Actuel"
-                    value={formStockActuel}
-                    onChange={(e) => setFormStockActuel(Number(e.target.value))}
-                    className={styles.modalInput}
-                    min={0}
-                    disabled={loadingSubmit}
-                  />
-                  <input
-                    type="number"
-                    placeholder="Stock Minimum"
-                    value={formStockMinimum}
-                    onChange={(e) => setFormStockMinimum(Number(e.target.value))}
-                    className={styles.modalInput}
-                    min={0}
-                    disabled={loadingSubmit}
-                  />
-                  <input
-                    type="number"
-                    placeholder="ID Catégorie"
-                    value={formCategorieId ?? ''}
-                    onChange={(e) => setFormCategorieId(Number(e.target.value))}
-                    className={styles.modalInput}
-                    min={1}
-                    disabled={loadingSubmit}
-                  />
+              {modalType === 'delete' && modalProduit && (
+                <>
+                  <h2>Confirmer</h2>
+                  <p>
+                    Veux-tu vraiment supprimer <strong>{modalProduit.nom}</strong> ?
+                  </p>
                   <div className={styles.modalActions}>
-                    <button type="submit" className={styles.modalButton} disabled={loadingSubmit}>
-                      {loadingSubmit ? 'Chargement...' : 'Confirmer'}
+                    <button
+                      onClick={handleDelete}
+                      className={styles.modalButtonDelete}
+                      disabled={loadingSubmit}
+                    >
+                      Supprimer
                     </button>
                     <button
-                      type="button"
                       onClick={closeModal}
                       className={styles.modalCloseButton}
                       disabled={loadingSubmit}
@@ -555,64 +586,38 @@ export default function ProduitTable() {
                       Annuler
                     </button>
                   </div>
-                </form>
-              </>
-            )}
+                </>
+              )}
 
-            {modalType === 'delete' && modalProduit && (
-              <>
-                <h2>Confirmer</h2>
-                <p>
-                  Veux-tu vraiment supprimer <strong>{modalProduit.nom}</strong> ?
-                </p>
-                <div className={styles.modalActions}>
-                  <button
-                    onClick={handleDelete}
-                    className={styles.modalButtonDelete}
-                    disabled={loadingSubmit}
+              {modalType === 'add' && (
+                <>
+                  <h2>Ajouter un produit</h2>
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleAdd();
+                    }}
                   >
-                    Supprimer
-                  </button>
-                  <button
-                    onClick={closeModal}
-                    className={styles.modalCloseButton}
-                    disabled={loadingSubmit}
-                  >
-                    Annuler
-                  </button>
-                </div>
-              </>
-            )}
+                    <input
+                      type="text"
+                      placeholder="Nom"
+                      value={formNom}
+                      onChange={(e) => setFormNom(e.target.value)}
+                      className={styles.modalInput}
+                      required
+                      disabled={loadingSubmit}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Prix Achat"
+                      value={formPrixAchatAffiche}
+                      onChange={handlePrixAchatChange}
+                      className={styles.modalInput}
+                      required
+                      disabled={loadingSubmit}
+                    />
 
-            {modalType === 'add' && (
-              <>
-                <h2>Ajouter un produit</h2>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    handleAdd();
-                  }}
-                >
-                  <input
-                    type="text"
-                    placeholder="Nom"
-                    value={formNom}
-                    onChange={(e) => setFormNom(e.target.value)}
-                    className={styles.modalInput}
-                    required
-                    disabled={loadingSubmit}
-                  />
-                  <input
-                    type="text"
-                    placeholder="Prix Achat"
-                    value={formPrixAchatAffiche}
-                    onChange={handlePrixAchatChange}
-                    className={styles.modalInput}
-                    required
-                    disabled={loadingSubmit}
-                  />
-
-                  {/* <input
+                    {/* <input
                     type="number"
                     placeholder="Prix Achat"
                     value={formPrixAchat}
@@ -623,17 +628,17 @@ export default function ProduitTable() {
                     step="0.01"
                     disabled={loadingSubmit}
                   /> */}
-                  <input
-                    type="text"
-                    placeholder="Prix Vente"
-                    value={formPrixVenteAffiche}
-                    onChange={handlePrixVenteChange}
-                    className={styles.modalInput}
-                    required
-                    disabled={loadingSubmit}
-                  />
+                    <input
+                      type="text"
+                      placeholder="Prix Vente"
+                      value={formPrixVenteAffiche}
+                      onChange={handlePrixVenteChange}
+                      className={styles.modalInput}
+                      required
+                      disabled={loadingSubmit}
+                    />
 
-                  {/* <input
+                    {/* <input
                     type="number"
                     placeholder="Prix Vente"
                     value={formPrixVente}
@@ -644,46 +649,46 @@ export default function ProduitTable() {
                     step="0.01"
                     disabled={loadingSubmit}
                   /> */}
-                  <input
-                    type="number"
-                    placeholder="Stock Actuel"
-                    value={formStockActuel}
-                    onChange={(e) => setFormStockActuel(Number(e.target.value))}
-                    className={styles.modalInput}
-                    min={0}
-                    disabled={loadingSubmit}
-                  />
-                  <input
-                    type="number"
-                    placeholder="Stock Minimum"
-                    value={formStockMinimum}
-                    onChange={(e) => setFormStockMinimum(Number(e.target.value))}
-                    className={styles.modalInput}
-                    min={0}
-                    disabled={loadingSubmit}
-                  />
+                    <input
+                      type="number"
+                      placeholder="Stock Actuel"
+                      value={formStockActuel}
+                      onChange={(e) => setFormStockActuel(Number(e.target.value))}
+                      className={styles.modalInput}
+                      min={0}
+                      disabled={loadingSubmit}
+                    />
+                    <input
+                      type="number"
+                      placeholder="Stock Minimum"
+                      value={formStockMinimum}
+                      onChange={(e) => setFormStockMinimum(Number(e.target.value))}
+                      className={styles.modalInput}
+                      min={0}
+                      disabled={loadingSubmit}
+                    />
 
-                  <select
-                    value={formCategorieId ?? ''}
-                    onChange={(e) => setFormCategorieId(Number(e.target.value))}
-                    className={styles.modalInput}
-                  >
-                    <option value="">-- Catégorie --</option>
-                    {dataCategorie.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.nom}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    type="number"
-                    placeholder="ID Utilisateur"
-                    value={formUtilisateurId ?? ''}
-                    onChange={(e) => setFormUtilisateurId(Number(e.target.value))}
-                    className={styles.modalInput}
-                    min={1}
-                  />
-                  {/* <input
+                    <select
+                      value={formCategorieId ?? ''}
+                      onChange={(e) => setFormCategorieId(Number(e.target.value))}
+                      className={styles.modalInput}
+                    >
+                      <option value="">-- Catégorie --</option>
+                      {dataCategorie.map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.nom}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="number"
+                      placeholder="ID Utilisateur"
+                      value={formUtilisateurId ?? ''}
+                      onChange={(e) => setFormUtilisateurId(Number(e.target.value))}
+                      className={styles.modalInput}
+                      min={1}
+                    />
+                    {/* <input
                     type="number"
                     placeholder="ID Catégorie"
                     value={formCategorieId ?? ''}
@@ -692,25 +697,26 @@ export default function ProduitTable() {
                     min={1}
                     disabled={loadingSubmit}
                   /> */}
-                  <div className={styles.modalActions}>
-                    <button type="submit" className={styles.modalButton} disabled={loadingSubmit}>
-                      {loadingSubmit ? 'Chargement...' : 'Ajouter'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={closeModal}
-                      className={styles.modalCloseButton}
-                      disabled={loadingSubmit}
-                    >
-                      Annuler
-                    </button>
-                  </div>
-                </form>
-              </>
-            )}
+                    <div className={styles.modalActions}>
+                      <button type="submit" className={styles.modalButton} disabled={loadingSubmit}>
+                        {loadingSubmit ? 'Chargement...' : 'Ajouter'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={closeModal}
+                        className={styles.modalCloseButton}
+                        disabled={loadingSubmit}
+                      >
+                        Annuler
+                      </button>
+                    </div>
+                  </form>
+                </>
+              )}
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </ProtectedRoute>
   );
 }

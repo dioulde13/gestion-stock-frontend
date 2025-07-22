@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import styles from './fournisseur.module.css';
+import ProtectedRoute from '../components/ProtectedRoute';
+
 
 declare module 'jspdf' {
   interface jsPDF {
@@ -252,18 +254,18 @@ export default function ProduitTable() {
     }
     try {
       setLoadingSubmit(true);
-      const newProduit = {
+      const newFournisseur = {
         nom: formNom,
         adresse: formAdresse,
         email: formEmail,
         telephone: Number(formTelephone),
         utilisateurId: formUtilisateurId,
       };
-      console.log(newProduit);
+      console.log(newFournisseur);
       const res = await fetch('http://localhost:3000/api/fournisseur/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newProduit),
+        body: JSON.stringify(newFournisseur),
       });
       if (!res.ok) throw new Error("Erreur lors de l'ajout");
       const dataApi = await res.json();
@@ -275,7 +277,7 @@ export default function ProduitTable() {
       setCurrentPage(newTotalPages);
       closeModal();
       fetchFournisseur();
-      showNotification('Produit ajouté avec succès.');
+      showNotification('Fournisseur ajouté avec succès.');
     } catch (e) {
       alert((e as Error).message);
     } finally {
@@ -285,6 +287,7 @@ export default function ProduitTable() {
 
 
   return (
+    <ProtectedRoute>
     <div className={styles.container}>
       <h1 className={styles.title}>La Liste Des Fournisseurs</h1>
 
@@ -588,5 +591,6 @@ export default function ProduitTable() {
         </div>
       )}
     </div>
+    </ProtectedRoute>
   );
 }

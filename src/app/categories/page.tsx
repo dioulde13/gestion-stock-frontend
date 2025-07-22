@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import 'jspdf-autotable';
 import styles from './categorie.module.css';
+import ProtectedRoute from '../components/ProtectedRoute';
+
 
 declare module 'jspdf' {
     interface jsPDF {
@@ -198,216 +200,218 @@ export default function CategorieTable() {
     };
 
     return (
-        <div className={styles.container}>
-            <h1 className={styles.title}>La Liste Des Categories</h1>
+        <ProtectedRoute>
+            <div className={styles.container}>
+                <h1 className={styles.title}>La Liste Des Categories</h1>
 
-            {/* Notification */}
-            {notification && (
-                <div className={styles.notification}>
-                    {notification}
+                {/* Notification */}
+                {notification && (
+                    <div className={styles.notification}>
+                        {notification}
+                    </div>
+                )}
+
+                <div className={styles.actions}>
+                    <button onClick={exportCSV} className={styles.button}>
+                        Exporter CSV
+                    </button>
+                    <div>
+                        <input
+                            type="text"
+                            placeholder="Rechercher..."
+                            value={search}
+                            onChange={(e) => {
+                                setSearch(e.target.value);
+                                setCurrentPage(1);
+                            }}
+                            className={styles.searchInput}
+                        />
+                    </div>
+
+                    <button
+                        onClick={() => openModal('add')}
+                        className={`${styles.button} ${styles.addButton}`}
+                        style={{ marginLeft: 'auto' }}
+                    >
+                        Ajouter
+                    </button>
                 </div>
-            )}
 
-            <div className={styles.actions}>
-                <button onClick={exportCSV} className={styles.button}>
-                    Exporter CSV
-                </button>
-                <div>
-                    <input
-                        type="text"
-                        placeholder="Rechercher..."
-                        value={search}
-                        onChange={(e) => {
-                            setSearch(e.target.value);
-                            setCurrentPage(1);
-                        }}
-                        className={styles.searchInput}
-                    />
-                </div>
-
-                <button
-                    onClick={() => openModal('add')}
-                    className={`${styles.button} ${styles.addButton}`}
-                    style={{ marginLeft: 'auto' }}
-                >
-                    Ajouter
-                </button>
-            </div>
-
-            {loading ? (
-                <p>Chargement...</p>
-            ) : error ? (
-                <p style={{ color: 'red' }}>Erreur : {error}</p>
-            ) : (
-                <>
-                    <table className={styles.table}>
-                        <thead>
-                            <tr>
-                                <th>Nom</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {currentData.length ? (
-                                currentData.map((produit) => (
-                                    <tr key={produit.id}>
-                                        <td>{produit.nom}</td>
-                                        <td>
-                                            <button
-                                                title="Modifier"
-                                                className={styles.actionButton}
-                                                onClick={() => openModal('edit', produit)}
-                                            >
-                                                ✏️
-                                            </button>
-                                            <button
-                                                title="Supprimer"
-                                                className={styles.actionButton}
-                                                onClick={() => openModal('delete', produit)}
-                                            >
-                                                🗑️
-                                            </button>
+                {loading ? (
+                    <p>Chargement...</p>
+                ) : error ? (
+                    <p style={{ color: 'red' }}>Erreur : {error}</p>
+                ) : (
+                    <>
+                        <table className={styles.table}>
+                            <thead>
+                                <tr>
+                                    <th>Nom</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {currentData.length ? (
+                                    currentData.map((produit) => (
+                                        <tr key={produit.id}>
+                                            <td>{produit.nom}</td>
+                                            <td>
+                                                <button
+                                                    title="Modifier"
+                                                    className={styles.actionButton}
+                                                    onClick={() => openModal('edit', produit)}
+                                                >
+                                                    ✏️
+                                                </button>
+                                                <button
+                                                    title="Supprimer"
+                                                    className={styles.actionButton}
+                                                    onClick={() => openModal('delete', produit)}
+                                                >
+                                                    🗑️
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan={10} style={{ textAlign: 'center' }}>
+                                            Aucun résultat
                                         </td>
                                     </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan={10} style={{ textAlign: 'center' }}>
-                                        Aucun résultat
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
+                                )}
+                            </tbody>
+                        </table>
 
-                    <div className={styles.pagination}>
-                        <button
-                            onClick={() => goToPage(currentPage - 1)}
-                            disabled={currentPage === 1}
-                            className={styles.pageButton}
+                        <div className={styles.pagination}>
+                            <button
+                                onClick={() => goToPage(currentPage - 1)}
+                                disabled={currentPage === 1}
+                                className={styles.pageButton}
+                            >
+                                Précédent
+                            </button>
+
+                            <span className={styles.pageInfo}>
+                                Page {currentPage} / {totalPages}
+                            </span>
+
+                            <button
+                                onClick={() => goToPage(currentPage + 1)}
+                                disabled={currentPage === totalPages}
+                                className={styles.pageButton}
+                            >
+                                Suivant
+                            </button>
+                        </div>
+                    </>
+                )}
+
+                {modalOpen && (
+                    <div className={styles.modalOverlay} onClick={closeModal}>
+                        <div
+                            className={styles.modal}
+                            onClick={(e) => e.stopPropagation()}
+                            role="dialog"
+                            aria-modal="true"
                         >
-                            Précédent
-                        </button>
-
-                        <span className={styles.pageInfo}>
-                            Page {currentPage} / {totalPages}
-                        </span>
-
-                        <button
-                            onClick={() => goToPage(currentPage + 1)}
-                            disabled={currentPage === totalPages}
-                            className={styles.pageButton}
-                        >
-                            Suivant
-                        </button>
-                    </div>
-                </>
-            )}
-
-            {modalOpen && (
-                <div className={styles.modalOverlay} onClick={closeModal}>
-                    <div
-                        className={styles.modal}
-                        onClick={(e) => e.stopPropagation()}
-                        role="dialog"
-                        aria-modal="true"
-                    >
-                        {modalType === 'edit' && modalCategorie && (
-                            <>
-                                <h2>Modifier une categorie</h2>
-                                <form
-                                    onSubmit={(e) => {
-                                        e.preventDefault();
-                                        handleEdit();
-                                    }}
-                                >
-                                    <input
-                                        type="text"
-                                        placeholder="Nom"
-                                        value={formNom}
-                                        onChange={(e) => setFormNom(e.target.value)}
-                                        className={styles.modalInput}
-                                        required
-                                    />
-                                    <div className={styles.modalActions}>
-                                        <button type="submit" className={styles.modalButton}>
-                                            Confirmer
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={closeModal}
-                                            className={styles.modalCloseButton}
-                                        >
-                                            Annuler
-                                        </button>
-                                    </div>
-                                </form>
-                            </>
-                        )}
-
-                        {modalType === 'delete' && modalCategorie && (
-                            <>
-                                <h2>Confirmer</h2>
-                                <p>
-                                    Veux-tu vraiment supprimer <strong>{modalCategorie.nom}</strong> ?
-                                </p>
-                                <div className={styles.modalActions}>
-                                    <button onClick={handleDelete} className={styles.modalButtonDelete}>
-                                        Supprimer
-                                    </button>
-                                    <button
-                                        onClick={closeModal}
-                                        className={styles.modalCloseButton}
+                            {modalType === 'edit' && modalCategorie && (
+                                <>
+                                    <h2>Modifier une categorie</h2>
+                                    <form
+                                        onSubmit={(e) => {
+                                            e.preventDefault();
+                                            handleEdit();
+                                        }}
                                     >
-                                        Annuler
-                                    </button>
-                                </div>
-                            </>
-                        )}
+                                        <input
+                                            type="text"
+                                            placeholder="Nom"
+                                            value={formNom}
+                                            onChange={(e) => setFormNom(e.target.value)}
+                                            className={styles.modalInput}
+                                            required
+                                        />
+                                        <div className={styles.modalActions}>
+                                            <button type="submit" className={styles.modalButton}>
+                                                Confirmer
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={closeModal}
+                                                className={styles.modalCloseButton}
+                                            >
+                                                Annuler
+                                            </button>
+                                        </div>
+                                    </form>
+                                </>
+                            )}
 
-                        {modalType === 'add' && (
-                            <>
-                                <h2>Ajouter une categorie</h2>
-                                <form
-                                    onSubmit={(e) => {
-                                        e.preventDefault();
-                                        handleAdd();
-                                    }}
-                                >
-                                    <input
-                                        type="text"
-                                        placeholder="Nom"
-                                        value={formNom}
-                                        onChange={(e) => setFormNom(e.target.value)}
-                                        className={styles.modalInput}
-                                        required
-                                    />
-                                    <input
-                                        type="number"
-                                        placeholder="ID Utilisateur"
-                                        value={formUtilisateurId ?? ''}
-                                        onChange={(e) => setFormUtilisateurId(Number(e.target.value))}
-                                        className={styles.modalInput}
-                                        min={1}
-                                    />
+                            {modalType === 'delete' && modalCategorie && (
+                                <>
+                                    <h2>Confirmer</h2>
+                                    <p>
+                                        Veux-tu vraiment supprimer <strong>{modalCategorie.nom}</strong> ?
+                                    </p>
                                     <div className={styles.modalActions}>
-                                        <button type="submit" className={styles.modalButton}>
-                                            Ajouter
+                                        <button onClick={handleDelete} className={styles.modalButtonDelete}>
+                                            Supprimer
                                         </button>
                                         <button
-                                            type="button"
                                             onClick={closeModal}
                                             className={styles.modalCloseButton}
                                         >
                                             Annuler
                                         </button>
                                     </div>
-                                </form>
-                            </>
-                        )}
+                                </>
+                            )}
+
+                            {modalType === 'add' && (
+                                <>
+                                    <h2>Ajouter une categorie</h2>
+                                    <form
+                                        onSubmit={(e) => {
+                                            e.preventDefault();
+                                            handleAdd();
+                                        }}
+                                    >
+                                        <input
+                                            type="text"
+                                            placeholder="Nom"
+                                            value={formNom}
+                                            onChange={(e) => setFormNom(e.target.value)}
+                                            className={styles.modalInput}
+                                            required
+                                        />
+                                        <input
+                                            type="number"
+                                            placeholder="ID Utilisateur"
+                                            value={formUtilisateurId ?? ''}
+                                            onChange={(e) => setFormUtilisateurId(Number(e.target.value))}
+                                            className={styles.modalInput}
+                                            min={1}
+                                        />
+                                        <div className={styles.modalActions}>
+                                            <button type="submit" className={styles.modalButton}>
+                                                Ajouter
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={closeModal}
+                                                className={styles.modalCloseButton}
+                                            >
+                                                Annuler
+                                            </button>
+                                        </div>
+                                    </form>
+                                </>
+                            )}
+                        </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )}
+            </div>
+        </ProtectedRoute>
     );
 }

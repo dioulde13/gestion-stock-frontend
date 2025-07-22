@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import 'jspdf-autotable';
 import styles from './stockMinimum.module.css';
+import ProtectedRoute from '../components/ProtectedRoute';
+
 
 declare module 'jspdf' {
   interface jsPDF {
@@ -94,6 +96,7 @@ export default function ProduitTableStockMinimum() {
 
 
   return (
+    <ProtectedRoute>
     <div className={styles.container}>
       <h1 className={styles.title}>La Liste Des Produits En Alerte De Stock</h1>
       <div className={styles.actions}>
@@ -175,5 +178,6 @@ export default function ProduitTableStockMinimum() {
         </>
       )}
     </div>
+    </ProtectedRoute>
   );
 }
