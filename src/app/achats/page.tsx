@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import ProtectedRoute from '../components/ProtectedRoute';
+import { getUserFromCookie } from '../utils/jwt';
+// import UtilisateurTable from '../utilisateurs/page';
 
 
 type Fournisseur = {
@@ -47,8 +49,10 @@ export default function VentesPage() {
   const [creating, setCreating] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [formUtilisateurId, setFormUtilisateurId] = useState<number | null>(null);
+  // console.log(formUtilisateurId);
   const [ligneTemp, setLigneTemp] = useState({
-    utilisateurId: '',
+    utilisateurId: formUtilisateurId,
     produitId: '',
     fournisseurId: '',
     quantite: '1',
@@ -65,6 +69,11 @@ export default function VentesPage() {
 
 
   useEffect(() => {
+    const user = getUserFromCookie();
+    if (user) {
+      setFormUtilisateurId(user.id);
+      console.log('Utilisateur connecté:', user); // Pour debug
+    }
     setMounted(true);
     fetchAchats();
     fetchProduits();
@@ -169,7 +178,6 @@ export default function VentesPage() {
 
     const lignesValides = lignesAchat.every(
       (ligne) =>
-        ligne.utilisateurId > 0 &&
         ligne.fournisseurId > 0 &&
         ligne.produitId > 0 &&
         ligne.quantite > 0 &&
@@ -196,6 +204,8 @@ export default function VentesPage() {
       fournisseurId,
       lignes: lignesFormattees,
     };
+
+    console.log(payload);
 
     setCreating(true);
     try {
@@ -242,7 +252,7 @@ export default function VentesPage() {
     if (typeof index === 'number') {
       const ligne = lignesAchat[index];
       setLigneTemp({
-        utilisateurId: ligne.utilisateurId.toString(),
+        utilisateurId: ligne.utilisateurId.valueOf(),
         fournisseurId: ligne.fournisseurId.toString(),
         produitId: ligne.produitId.toString(),
         quantite: ligne.quantite.toString(),
@@ -251,7 +261,7 @@ export default function VentesPage() {
       });
       setEditingIndex(index);
     } else {
-      setLigneTemp({ utilisateurId: '', fournisseurId: '', produitId: '', quantite: '1', prix_achat: '', prix_vente: '' });
+      setLigneTemp({ utilisateurId: formUtilisateurId, fournisseurId: '', produitId: '', quantite: '1', prix_achat: '', prix_vente: '' });
       setEditingIndex(null);
     }
     setModalOpen(true);
@@ -259,12 +269,12 @@ export default function VentesPage() {
 
   const fermerModal = () => {
     setModalOpen(false);
-    setLigneTemp({ utilisateurId: '', fournisseurId: '', produitId: '', quantite: '1', prix_achat: '', prix_vente: '' });
+    setLigneTemp({ utilisateurId: formUtilisateurId, fournisseurId: '', produitId: '', quantite: '1', prix_achat: '', prix_vente: '' });
     setEditingIndex(null);
   };
 
   const confirmerLigne = () => {
-    const utilisateurIdNum = Number(ligneTemp.utilisateurId);
+    const utilisateurIdNum = Number(formUtilisateurId);
     const fournisseurIdNum = Number(ligneTemp.fournisseurId);
     const produitIdNum = Number(ligneTemp.produitId);
     const quantiteNum = Number(ligneTemp.quantite);
@@ -473,7 +483,7 @@ export default function VentesPage() {
             <div onClick={(e) => e.stopPropagation()} style={{ background: 'white', padding: 20, borderRadius: 8, width: '90%', maxWidth: 600 }}>
               <h3 style={{ marginBottom: 15, fontWeight: 'bold', fontSize: '1.2rem' }}>{editingIndex !== null ? 'Modifier la ligne' : 'Ajouter une ligne'}</h3>
               <label style={{ display: 'block', marginBottom: 8 }}>Utilisateur :</label>
-              <select
+              {/* <select
                 value={ligneTemp.utilisateurId}
                 onChange={(e) => setLigneTemp({ ...ligneTemp, utilisateurId: e.target.value })}
                 style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: 6, marginBottom: 15, backgroundColor: '#f9f9f9', fontSize: '1rem' }}
@@ -482,7 +492,7 @@ export default function VentesPage() {
                 {dataUtilisateur.map((prod) => (
                   <option key={prod.id} value={prod.id}>{prod.nom}</option>
                 ))}
-              </select>
+              </select> */}
               <label style={{ display: 'block', marginBottom: 8 }}>Fournisseur :</label>
               <select
                 value={ligneTemp.fournisseurId}

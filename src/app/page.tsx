@@ -112,6 +112,7 @@ export default function Home() {
         <StatCard label="Ruptures de stock" value={stats.rupturesStock} unit="articles" color="red" />
         <StatCard label="Alertes Stock Min" value={stats.alertesStock} unit="alertes" color="orange" />
         <StatCard label="Valeur du stock" value={stats.valeurStock} color="gray" />
+        <StatCard label="Solde du caisse" value={stats.valeurStock + stats.beneficeTotal} color="gray" />
       </div>
     </ProtectedRoute>
   );

@@ -5,6 +5,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import styles from './produit.module.css';
 import ProtectedRoute from '../components/ProtectedRoute';
+import { getUserFromCookie } from '../utils/jwt';
 
 
 declare module 'jspdf' {
@@ -13,6 +14,11 @@ declare module 'jspdf' {
   }
 }
 
+type Utilisateur = {
+  id: number;
+  nom: string;
+};
+
 type Categorie = {
   id: number;
   nom: string;
@@ -20,12 +26,14 @@ type Categorie = {
 
 type Produit = {
   id: number;
+  createdAt: string;
   nom: string;
   prix_achat: number;
   prix_vente: number;
   stock_actuel: number;
   stock_minimum: number;
   Categorie?: Categorie;
+  Utilisateur?:Utilisateur;
 };
 
 export default function ProduitTable() {
@@ -61,6 +69,11 @@ export default function ProduitTable() {
   const itemsPerPage = 5;
 
   useEffect(() => {
+    const user = getUserFromCookie();
+    if (user) {
+      setFormUtilisateurId(user.id);
+      console.log('Utilisateur connecté:', user); // Pour debug
+    }
     fetchProduits();
     fetchCategories();
   }, []);
@@ -192,7 +205,7 @@ export default function ProduitTable() {
       setFormStockActuel('');
       setFormStockMinimum('');
       setFormCategorieId(null);
-      setFormUtilisateurId(null);
+      setFormUtilisateurId(formUtilisateurId);
     }
   };
 
@@ -275,6 +288,7 @@ export default function ProduitTable() {
         categorieId: formCategorieId,
         utilisateurId: formUtilisateurId,
       };
+      console.log(newProduit);
       const res = await fetch('http://localhost:3000/api/produit/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -288,6 +302,8 @@ export default function ProduitTable() {
       const newTotalItems = filteredData.length + 1;
       const newTotalPages = Math.ceil(newTotalItems / itemsPerPage);
       setCurrentPage(newTotalPages);
+      fetchCategories();
+      fetchProduits();
       closeModal();
       showNotification('Produit ajouté avec succès.');
     } catch (e) {
@@ -394,6 +410,7 @@ export default function ProduitTable() {
               <thead>
                 <tr>
                   <th>ID</th>
+                  <th>Date</th>
                   <th>Nom</th>
                   <th>Prix Achat</th>
                   <th>Prix Vente</th>
@@ -403,6 +420,7 @@ export default function ProduitTable() {
                   <th>Total Vente</th>
                   <th>Bénéfice</th>
                   <th>Catégorie</th>
+                  <th>Utilisateur</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -411,6 +429,15 @@ export default function ProduitTable() {
                   currentData.map((produit) => (
                     <tr key={produit.id}>
                       <td>{produit.id}</td>
+                      <td>{produit.createdAt
+                          ? new Intl.DateTimeFormat('fr-FR', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          }).format(new Date(produit.createdAt))
+                          : 'Produit inconnu'}</td>
                       <td>{produit.nom}</td>
                       <td>{formatPrix(produit.prix_achat)}</td>
                       <td>{formatPrix(produit.prix_vente)}</td>
@@ -420,6 +447,7 @@ export default function ProduitTable() {
                       <td>{formatPrix(produit.stock_actuel * produit.prix_vente)}</td>
                       <td>{formatPrix((produit.stock_actuel * produit.prix_vente) - (produit.stock_actuel * produit.prix_achat))}</td>
                       <td>{produit.Categorie?.nom}</td>
+                      <td>{produit.Utilisateur?.nom}</td>
                       <td>
                         <button
                           title="Modifier"
@@ -680,14 +708,14 @@ export default function ProduitTable() {
                         </option>
                       ))}
                     </select>
-                    <input
+                    {/* <input
                       type="number"
                       placeholder="ID Utilisateur"
                       value={formUtilisateurId ?? ''}
                       onChange={(e) => setFormUtilisateurId(Number(e.target.value))}
                       className={styles.modalInput}
                       min={1}
-                    />
+                    /> */}
                     {/* <input
                     type="number"
                     placeholder="ID Catégorie"

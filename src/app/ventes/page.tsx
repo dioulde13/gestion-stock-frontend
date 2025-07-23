@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import ProtectedRoute from '../components/ProtectedRoute';
+import { getUserFromCookie } from '../utils/jwt';
 
 
 type Produit = {
@@ -14,7 +15,8 @@ type Produit = {
 
 type LigneVente = {
   id?: number;
-  createdAt: string,
+  utilisateurId: number;
+  // createdAt: string,
   produitId: number;
   quantite: number;
   prix_achat: number;
@@ -37,9 +39,12 @@ export default function VentesPage() {
   const [creating, setCreating] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
+   const [formUtilisateurId, setFormUtilisateurId] = useState<number | null>(null);
+  // console.log(formUtilisateurId);
   const [ligneTemp, setLigneTemp] = useState({
+    utilisateurId: formUtilisateurId,
     produitId: '',
-    createdAt: '',
+    // createdAt: '',
     quantite: '1',
     prix_achat: '',
     prix_vente: '',
@@ -49,7 +54,13 @@ export default function VentesPage() {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [dataProduit, setDataProduit] = useState<Produit[]>([]);
 
+
   useEffect(() => {
+    const user = getUserFromCookie();
+    if (user) {
+      setFormUtilisateurId(user.id);
+      console.log('Utilisateur connecté:', user); // Pour debug
+    }
     setMounted(true);
     fetchVentes();
     fetchProduits();
@@ -133,12 +144,26 @@ export default function VentesPage() {
       return;
     }
 
+        const { utilisateurId } = lignesVente[0];
+
+    const lignesFormattees = lignesVente.map((ligne) => ({
+      produitId: ligne.produitId,
+      quantite: ligne.quantite,
+      prix_achat: ligne.prix_achat,
+      prix_vente: ligne.prix_vente,
+    }));
+
+    const payload = {
+      utilisateurId,
+      lignes: lignesFormattees,
+    };
+
     setCreating(true);
     try {
       const res = await fetch('http://localhost:3000/api/vente/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lignes: lignesVente }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
@@ -176,15 +201,16 @@ export default function VentesPage() {
     if (typeof index === 'number') {
       const ligne = lignesVente[index];
       setLigneTemp({
+        utilisateurId: formUtilisateurId,
         produitId: ligne.produitId.toString(),
-        createdAt: ligne.createdAt.toString(),
+        // createdAt: ligne.createdAt.toString(),
         quantite: ligne.quantite.toString(),
         prix_achat: ligne.prix_achat.toString(),
         prix_vente: ligne.prix_vente.toString(),
       });
       setEditingIndex(index);
     } else {
-      setLigneTemp({ produitId: '', createdAt: '', quantite: '1', prix_achat: '', prix_vente: '' });
+      setLigneTemp({ utilisateurId: formUtilisateurId, produitId: '', quantite: '1', prix_achat: '', prix_vente: '' });
       setEditingIndex(null);
     }
     setModalOpen(true);
@@ -192,14 +218,15 @@ export default function VentesPage() {
 
   const fermerModal = () => {
     setModalOpen(false);
-    setLigneTemp({ produitId: '', createdAt: '', quantite: '1', prix_achat: '', prix_vente: '' });
+    setLigneTemp({utilisateurId: formUtilisateurId, produitId: '', quantite: '1', prix_achat: '', prix_vente: '' });
     setEditingIndex(null);
   };
 
   const confirmerLigne = () => {
+    const utilisateurIdNum = Number(formUtilisateurId);
     const produitIdNum = Number(ligneTemp.produitId);
     const quantiteNum = Number(ligneTemp.quantite);
-    const createdAt = ligneTemp.createdAt;
+    // const createdAt = ligneTemp.createdAt;
     const prixAchatNum = Number(ligneTemp.prix_achat);
     const prixVenteNum = Number(ligneTemp.prix_vente);
 
@@ -209,8 +236,9 @@ export default function VentesPage() {
     }
 
     const nouvelleLigne = {
+      utilisateurId: utilisateurIdNum,
       produitId: produitIdNum,
-      createdAt: createdAt,
+      // createdAt: createdAt,
       quantite: quantiteNum,
       prix_achat: prixAchatNum,
       prix_vente: prixVenteNum,

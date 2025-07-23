@@ -5,6 +5,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import styles from './fournisseur.module.css';
 import ProtectedRoute from '../components/ProtectedRoute';
+import { getUserFromCookie } from '../utils/jwt';
 
 
 declare module 'jspdf' {
@@ -58,6 +59,11 @@ export default function ProduitTable() {
   const itemsPerPage = 5;
 
   useEffect(() => {
+    const user = getUserFromCookie();
+    if (user) {
+      setFormUtilisateurId(user.id);
+      console.log('Utilisateur connecté:', user); // Pour debug
+    }
     fetchFournisseur();
     fetchUtilisateur();
   }, []);
@@ -182,7 +188,7 @@ export default function ProduitTable() {
       setFormAdresse('');
       setFormTelephone('');
       setFormEmail('');
-      setFormUtilisateurId(null);
+      setFormUtilisateurId(formUtilisateurId);
     }
   };
 
@@ -288,195 +294,221 @@ export default function ProduitTable() {
 
   return (
     <ProtectedRoute>
-    <div className={styles.container}>
-      <h1 className={styles.title}>La Liste Des Fournisseurs</h1>
+      <div className={styles.container}>
+        <h1 className={styles.title}>La Liste Des Fournisseurs</h1>
 
-      {notification && (
-        <div className={styles.notification}>
-          {notification}
+        {notification && (
+          <div className={styles.notification}>
+            {notification}
+          </div>
+        )}
+
+        <div className={styles.actions}>
+          <button onClick={exportCSV} className={styles.button}>
+            Exporter CSV
+          </button>
+          <button onClick={exportPDF} className={styles.button}>
+            Exporter PDF
+          </button>
+
+          <div>
+            <input
+              type="text"
+              placeholder="Rechercher..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setCurrentPage(1);
+              }}
+              className={styles.searchInput}
+            />
+          </div>
+
+          <button
+            onClick={() => openModal('add')}
+            className={`${styles.button} ${styles.addButton}`}
+            style={{ marginLeft: 'auto' }}
+          >
+            Ajouter
+          </button>
         </div>
-      )}
 
-      <div className={styles.actions}>
-        <button onClick={exportCSV} className={styles.button}>
-          Exporter CSV
-        </button>
-        <button onClick={exportPDF} className={styles.button}>
-          Exporter PDF
-        </button>
-
-        <div>
-          <input
-            type="text"
-            placeholder="Rechercher..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setCurrentPage(1);
-            }}
-            className={styles.searchInput}
-          />
-        </div>
-
-        <button
-          onClick={() => openModal('add')}
-          className={`${styles.button} ${styles.addButton}`}
-          style={{ marginLeft: 'auto' }}
-        >
-          Ajouter
-        </button>
-      </div>
-
-      {loading ? (
-        <p>Chargement...</p>
-      ) : error ? (
-        <p style={{ color: 'red' }}>Erreur : {error}</p>
-      ) : (
-        <>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Nom</th>
-                <th>Adresse</th>
-                <th>Email</th>
-                <th>Telephone</th>
-                <th>Utilisateur</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentData.length > 0 ? (
-                currentData.map((fournisseur) => (
-                  <tr key={fournisseur.id}>
-                    <td>{fournisseur.id}</td>
-                    <td>{fournisseur.nom}</td>
-                    <td>{fournisseur.adresse}</td>
-                    <td>{fournisseur.email}</td>
-                    <td>{fournisseur.telephone}</td>
-                    <td>{fournisseur.Utilisateur?.nom}</td>
-                    <td>
-                      <button
-                        title="Modifier"
-                        className={styles.actionButton}
-                        onClick={() => openModal('edit', fournisseur)}
-                      >
-                        ✏️
-                      </button>
-                      <button
-                        title="Supprimer"
-                        className={styles.actionButton}
-                        onClick={() => openModal('delete', fournisseur)}
-                      >
-                        🗑️
-                      </button>
+        {loading ? (
+          <p>Chargement...</p>
+        ) : error ? (
+          <p style={{ color: 'red' }}>Erreur : {error}</p>
+        ) : (
+          <>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Nom</th>
+                  <th>Adresse</th>
+                  <th>Email</th>
+                  <th>Telephone</th>
+                  <th>Utilisateur</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentData.length > 0 ? (
+                  currentData.map((fournisseur) => (
+                    <tr key={fournisseur.id}>
+                      <td>{fournisseur.id}</td>
+                      <td>{fournisseur.nom}</td>
+                      <td>{fournisseur.adresse}</td>
+                      <td>{fournisseur.email}</td>
+                      <td>{fournisseur.telephone}</td>
+                      <td>{fournisseur.Utilisateur?.nom}</td>
+                      <td>
+                        <button
+                          title="Modifier"
+                          className={styles.actionButton}
+                          onClick={() => openModal('edit', fournisseur)}
+                        >
+                          ✏️
+                        </button>
+                        <button
+                          title="Supprimer"
+                          className={styles.actionButton}
+                          onClick={() => openModal('delete', fournisseur)}
+                        >
+                          🗑️
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={10} style={{ textAlign: 'center' }}>
+                      Aucun résultat
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={10} style={{ textAlign: 'center' }}>
-                    Aucun résultat
-                  </td>
-                </tr>
+                )}
+              </tbody>
+            </table>
+
+            <div className={styles.pagination}>
+              <button
+                onClick={() => goToPage(currentPage - 1)}
+                disabled={currentPage === 1}
+                className={styles.pageButton}
+              >
+                Précédent
+              </button>
+
+              <span className={styles.pageInfo}>
+                Page {currentPage} / {totalPages}
+              </span>
+
+              <button
+                onClick={() => goToPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className={styles.pageButton}
+              >
+                Suivant
+              </button>
+            </div>
+          </>
+        )}
+
+        {modalOpen && (
+          <div className={styles.modalOverlay} onClick={closeModal}>
+            <div
+              className={styles.modal}
+              onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+            >
+              {modalType === 'edit' && modalFournisseur && (
+                <>
+                  <h2>Modifier fournisseur</h2>
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleEdit();
+                    }}
+                  >
+                    <input
+                      type="text"
+                      placeholder="Nom"
+                      value={formNom}
+                      onChange={(e) => setFormNom(e.target.value)}
+                      className={styles.modalInput}
+                      required
+                      disabled={loadingSubmit}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Adresse"
+                      value={formAdresse}
+                      onChange={(e) => setFormAdresse(e.target.value)}
+                      className={styles.modalInput}
+                      required
+                      disabled={loadingSubmit}
+                    />
+                    <input
+                      type="email"
+                      placeholder="Email"
+                      value={formEmail}
+                      onChange={(e) => setFormEmail(e.target.value)}
+                      className={styles.modalInput}
+                      required
+                      disabled={loadingSubmit}
+                    />
+                    <input
+                      type="number"
+                      placeholder="Telephone"
+                      value={formTelephone}
+                      onChange={(e) => setFormTelephone(e.target.value === '' ? '' : Number(e.target.value))}
+                      className={styles.modalInput}
+                      required
+                      min={0}
+                      step="0.01"
+                      disabled={loadingSubmit}
+                    />
+                    <input
+                      type="number"
+                      placeholder="ID Utilisateur"
+                      value={formUtilisateurId ?? ''}
+                      onChange={(e) => setFormTelephone(Number(e.target.value))}
+                      className={styles.modalInput}
+                      min={1}
+                      disabled={loadingSubmit}
+                    />
+                    <div className={styles.modalActions}>
+                      <button type="submit" className={styles.modalButton} disabled={loadingSubmit}>
+                        {loadingSubmit ? 'Chargement...' : 'Confirmer'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={closeModal}
+                        className={styles.modalCloseButton}
+                        disabled={loadingSubmit}
+                      >
+                        Annuler
+                      </button>
+                    </div>
+                  </form>
+                </>
               )}
-            </tbody>
-          </table>
 
-          <div className={styles.pagination}>
-            <button
-              onClick={() => goToPage(currentPage - 1)}
-              disabled={currentPage === 1}
-              className={styles.pageButton}
-            >
-              Précédent
-            </button>
-
-            <span className={styles.pageInfo}>
-              Page {currentPage} / {totalPages}
-            </span>
-
-            <button
-              onClick={() => goToPage(currentPage + 1)}
-              disabled={currentPage === totalPages}
-              className={styles.pageButton}
-            >
-              Suivant
-            </button>
-          </div>
-        </>
-      )}
-
-      {modalOpen && (
-        <div className={styles.modalOverlay} onClick={closeModal}>
-          <div
-            className={styles.modal}
-            onClick={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-          >
-            {modalType === 'edit' && modalFournisseur && (
-              <>
-                <h2>Modifier fournisseur</h2>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    handleEdit();
-                  }}
-                >
-                  <input
-                    type="text"
-                    placeholder="Nom"
-                    value={formNom}
-                    onChange={(e) => setFormNom(e.target.value)}
-                    className={styles.modalInput}
-                    required
-                    disabled={loadingSubmit}
-                  />
-                  <input
-                    type="text"
-                    placeholder="Adresse"
-                    value={formAdresse}
-                    onChange={(e) => setFormAdresse(e.target.value)}
-                    className={styles.modalInput}
-                    required
-                    disabled={loadingSubmit}
-                  />
-                  <input
-                    type="email"
-                    placeholder="Email"
-                    value={formEmail}
-                    onChange={(e) => setFormEmail(e.target.value)}
-                    className={styles.modalInput}
-                    required
-                    disabled={loadingSubmit}
-                  />
-                  <input
-                    type="number"
-                    placeholder="Telephone"
-                    value={formTelephone}
-                    onChange={(e) => setFormTelephone(e.target.value === '' ? '' : Number(e.target.value))}
-                    className={styles.modalInput}
-                    required
-                    min={0}
-                    step="0.01"
-                    disabled={loadingSubmit}
-                  />
-                  <input
-                    type="number"
-                    placeholder="ID Utilisateur"
-                    value={formUtilisateurId ?? ''}
-                    onChange={(e) => setFormTelephone(Number(e.target.value))}
-                    className={styles.modalInput}
-                    min={1}
-                    disabled={loadingSubmit}
-                  />
+              {modalType === 'delete' && modalFournisseur && (
+                <>
+                  <h2>Confirmer</h2>
+                  <p>
+                    Veux-tu vraiment supprimer <strong>{modalFournisseur.nom}</strong> ?
+                  </p>
                   <div className={styles.modalActions}>
-                    <button type="submit" className={styles.modalButton} disabled={loadingSubmit}>
-                      {loadingSubmit ? 'Chargement...' : 'Confirmer'}
+                    <button
+                      onClick={handleDelete}
+                      className={styles.modalButtonDelete}
+                      disabled={loadingSubmit}
+                    >
+                      Supprimer
                     </button>
                     <button
-                      type="button"
                       onClick={closeModal}
                       className={styles.modalCloseButton}
                       disabled={loadingSubmit}
@@ -484,113 +516,87 @@ export default function ProduitTable() {
                       Annuler
                     </button>
                   </div>
-                </form>
-              </>
-            )}
+                </>
+              )}
 
-            {modalType === 'delete' && modalFournisseur && (
-              <>
-                <h2>Confirmer</h2>
-                <p>
-                  Veux-tu vraiment supprimer <strong>{modalFournisseur.nom}</strong> ?
-                </p>
-                <div className={styles.modalActions}>
-                  <button
-                    onClick={handleDelete}
-                    className={styles.modalButtonDelete}
-                    disabled={loadingSubmit}
+              {modalType === 'add' && (
+                <>
+                  <h2>Ajouter un fournisseur</h2>
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleAdd();
+                    }}
                   >
-                    Supprimer
-                  </button>
-                  <button
-                    onClick={closeModal}
-                    className={styles.modalCloseButton}
-                    disabled={loadingSubmit}
-                  >
-                    Annuler
-                  </button>
-                </div>
-              </>
-            )}
-
-            {modalType === 'add' && (
-              <>
-                <h2>Ajouter un fournisseur</h2>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    handleAdd();
-                  }}
-                >
-                  <input
-                    type="text"
-                    placeholder="Nom"
-                    value={formNom}
-                    onChange={(e) => setFormNom(e.target.value)}
-                    className={styles.modalInput}
-                    required
-                    disabled={loadingSubmit}
-                  />
-                  <input
-                    type="text"
-                    placeholder="Adresse"
-                    value={formAdresse}
-                    onChange={(e) => setFormAdresse(e.target.value)}
-                    className={styles.modalInput}
-                    required
-                    disabled={loadingSubmit}
-                  />
-                  <input
-                    type="email"
-                    placeholder="Email"
-                    value={formEmail}
-                    onChange={(e) => setFormEmail(e.target.value)}
-                    className={styles.modalInput}
-                    required
-                    disabled={loadingSubmit}
-                  />
-                  <input
-                    type="number"
-                    placeholder="Telephone"
-                    value={formTelephone}
-                    onChange={(e) => setFormTelephone(Number(e.target.value))}
-                    className={styles.modalInput}
-                    required
-                    disabled={loadingSubmit}
-                  />
-
-                  <select
-                    value={formUtilisateurId ?? ''}
-                    onChange={(e) => setFormUtilisateurId(Number(e.target.value))}
-                    className={styles.modalInput}
-                  >
-                    <option value="">-- Utilisateur --</option>
-                    {dataUtilisateur.map((utilisateur) => (
-                      <option key={utilisateur.id} value={utilisateur.id}>
-                        {utilisateur.nom}
-                      </option>
-                    ))}
-                  </select>
-                  <div className={styles.modalActions}>
-                    <button type="submit" className={styles.modalButton} disabled={loadingSubmit}>
-                      {loadingSubmit ? 'Chargement...' : 'Ajouter'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={closeModal}
-                      className={styles.modalCloseButton}
+                    <input
+                      type="text"
+                      placeholder="Nom"
+                      value={formNom}
+                      onChange={(e) => setFormNom(e.target.value)}
+                      className={styles.modalInput}
+                      required
                       disabled={loadingSubmit}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Adresse"
+                      value={formAdresse}
+                      onChange={(e) => setFormAdresse(e.target.value)}
+                      className={styles.modalInput}
+                      required
+                      disabled={loadingSubmit}
+                    />
+                    <input
+                      type="email"
+                      placeholder="Email"
+                      value={formEmail}
+                      onChange={(e) => setFormEmail(e.target.value)}
+                      className={styles.modalInput}
+                      required
+                      disabled={loadingSubmit}
+                    />
+                    <input
+                      type="number"
+                      placeholder="Telephone"
+                      value={formTelephone}
+                      onChange={(e) => setFormTelephone(Number(e.target.value))}
+                      className={styles.modalInput}
+                      required
+                      disabled={loadingSubmit}
+                    />
+
+                    {/* <select
+                      value={formUtilisateurId ?? ''}
+                      onChange={(e) => setFormUtilisateurId(Number(e.target.value))}
+                      className={styles.modalInput}
                     >
-                      Annuler
-                    </button>
-                  </div>
-                </form>
-              </>
-            )}
+                      <option value="">-- Utilisateur --</option>
+                      {dataUtilisateur.map((utilisateur) => (
+                        <option key={utilisateur.id} value={utilisateur.id}>
+                          {utilisateur.nom}
+                        </option>
+                      ))}
+                    </select> */}
+                    <div className={styles.modalActions}>
+                      <button type="submit" className={styles.modalButton} disabled={loadingSubmit}>
+                        {loadingSubmit ? 'Chargement...' : 'Ajouter'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={closeModal}
+                        className={styles.modalCloseButton}
+                        disabled={loadingSubmit}
+                      >
+                        Annuler
+                      </button>
+                    </div>
+                  </form>
+                </>
+              )}
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
     </ProtectedRoute>
   );
 }

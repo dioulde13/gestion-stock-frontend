@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import 'jspdf-autotable';
 import styles from './categorie.module.css';
 import ProtectedRoute from '../components/ProtectedRoute';
-
+import { getUserFromCookie } from '../utils/jwt';
 
 declare module 'jspdf' {
     interface jsPDF {
@@ -12,10 +12,15 @@ declare module 'jspdf' {
     }
 }
 
+type Utilisateur = {
+    id: number;
+    nom: string;
+};
 
 type Categorie = {
     id: number;
     nom: string;
+    Utilisateur?: Utilisateur;
 };
 
 export default function CategorieTable() {
@@ -36,11 +41,18 @@ export default function CategorieTable() {
     // Form state
     const [formNom, setFormNom] = useState('');
     const [formUtilisateurId, setFormUtilisateurId] = useState<number | null>(null);
-
+    console.log(formUtilisateurId);
+    
     const itemsPerPage = 5;
 
     useEffect(() => {
         fetchCategories();
+        const user = getUserFromCookie();
+        if (user) {
+            setFormUtilisateurId(user.id);
+            console.log('Utilisateur connecté:', user); // Pour debug
+        }
+    
     }, []);
 
     const fetchCategories = async () => {
@@ -114,7 +126,7 @@ export default function CategorieTable() {
             setFormNom(categorie.nom);
         } else if (type === 'add') {
             setFormNom('');
-            setFormUtilisateurId(null);
+            setFormUtilisateurId(formUtilisateurId);
         }
     };
 
@@ -173,6 +185,7 @@ export default function CategorieTable() {
                 nom: formNom,
                 utilisateurId: formUtilisateurId,
             };
+            console.log(newProduit);
             const res = await fetch('http://localhost:3000/api/categorie/create', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -247,26 +260,28 @@ export default function CategorieTable() {
                             <thead>
                                 <tr>
                                     <th>Nom</th>
+                                    <th>Utilisateur</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {currentData.length ? (
-                                    currentData.map((produit) => (
-                                        <tr key={produit.id}>
-                                            <td>{produit.nom}</td>
+                                    currentData.map((categorie) => (
+                                        <tr key={categorie.id}>
+                                            <td>{categorie.nom}</td>
+                                            <td>{categorie.Utilisateur?.nom}</td>
                                             <td>
                                                 <button
                                                     title="Modifier"
                                                     className={styles.actionButton}
-                                                    onClick={() => openModal('edit', produit)}
+                                                    onClick={() => openModal('edit', categorie)}
                                                 >
                                                     ✏️
                                                 </button>
                                                 <button
                                                     title="Supprimer"
                                                     className={styles.actionButton}
-                                                    onClick={() => openModal('delete', produit)}
+                                                    onClick={() => openModal('delete', categorie)}
                                                 >
                                                     🗑️
                                                 </button>
@@ -385,14 +400,14 @@ export default function CategorieTable() {
                                             className={styles.modalInput}
                                             required
                                         />
-                                        <input
+                                        {/* <input
                                             type="number"
                                             placeholder="ID Utilisateur"
                                             value={formUtilisateurId ?? ''}
                                             onChange={(e) => setFormUtilisateurId(Number(e.target.value))}
                                             className={styles.modalInput}
                                             min={1}
-                                        />
+                                        /> */}
                                         <div className={styles.modalActions}>
                                             <button type="submit" className={styles.modalButton}>
                                                 Ajouter
